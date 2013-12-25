@@ -77,11 +77,15 @@ QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
 
 QBinaryDataViewViewport::~QBinaryDataViewViewport(void)
 {
+    TRACE_IN;
 
+    TRACE_OUT;
 }
 
 void QBinaryDataViewViewport::setDataSource(QBinaryDataSource *newDataSource)
 {
+    TRACE_IN;
+
     if (newDataSource != dataSource_) {
         dataSource_ = newDataSource;
         topRow_ = 0;
@@ -94,45 +98,59 @@ void QBinaryDataViewViewport::setDataSource(QBinaryDataSource *newDataSource)
         currentCursorInputBuffer_.clear();
         update();
     }
+
+    TRACE_OUT;
 }
 
 QBinaryDataSource *QBinaryDataViewViewport::dataSource() const
 {
+    TRACE_IN;
+    TRACE_OUT;
     return dataSource_;
 }
 
 void QBinaryDataViewViewport::setGroupSize(quint8 newGroupSize)
 {
+    TRACE_IN;
     if (newGroupSize != groupSize_) {
         groupSize_ = newGroupSize;
         update();
     }
+    TRACE_OUT;
 }
 
 int QBinaryDataViewViewport::groupSize() const
 {
+    TRACE_IN;
+    TRACE_OUT;
     return groupSize_;
 }
 
 void QBinaryDataViewViewport::setTopRow(int topRow)
 {
+    TRACE_IN;
     if (topRow != topRow_) {
         topRow_ = topRow;
         update();
     }
+    TRACE_OUT;
 }
 
 int QBinaryDataViewViewport::topRow() const
 {
+    TRACE_IN;
+    TRACE_OUT;
     return topRow_;
 }
 
 void QBinaryDataViewViewport::setLeftColumn(int leftColumn)
 {
+    TRACE_IN;
+
     if (!dataSource_) return;
 
     int totalColumnCount = dataSource_->columnCount(QModelIndex());
-    int newLeftColumn = leftColumn * columnsPerPage_;
+    int newLeftColumn = leftColumn;
 
     if (newLeftColumn + columnsPerPage_ > totalColumnCount)
     {
@@ -143,23 +161,33 @@ void QBinaryDataViewViewport::setLeftColumn(int leftColumn)
         leftColumn_ = newLeftColumn;
         update();
     }
+
+    TRACE_OUT;
 }
 
 int QBinaryDataViewViewport::leftColumn() const
 {
+    TRACE_IN;
+    TRACE_OUT;
     return leftColumn_;
 }
 
 void QBinaryDataViewViewport::setupScrollBars()
 {
-    if (!scrollArea_ || !dataSource_) return;
+    TRACE_IN;
+
+    if (!scrollArea_ || !dataSource_)
+    {
+        TRACE_OUT;
+        return;
+    }
 
     int totalRowCount = dataSource_->rowCount(QModelIndex());
     int totalColumnCount = dataSource_->columnCount(QModelIndex());
 
     if (totalRowCount > 0 && linesPerPage_ < totalRowCount)
     {
-        scrollArea_->verticalScrollBar()->setRange(0,totalRowCount-linesPerPage_-1);
+        scrollArea_->verticalScrollBar()->setRange(0, totalRowCount-linesPerPage_-1);
         scrollArea_->verticalScrollBar()->setPageStep(linesPerPage_-1);
         scrollArea_->verticalScrollBar()->setSingleStep(1);
         scrollArea_->verticalScrollBar()->setValue(topRow_);
@@ -171,19 +199,23 @@ void QBinaryDataViewViewport::setupScrollBars()
 
     if (totalColumnCount > 0 && columnsPerPage_ > 0 && totalColumnCount > columnsPerPage_)
     {
-        scrollArea_->horizontalScrollBar()->setRange(0,totalColumnCount/columnsPerPage_);
-        scrollArea_->horizontalScrollBar()->setPageStep(totalColumnCount/columnsPerPage_);
-        scrollArea_->horizontalScrollBar()->setSingleStep(totalColumnCount/columnsPerPage_);
+        scrollArea_->horizontalScrollBar()->setRange(0, totalColumnCount - columnsPerPage_);
+        scrollArea_->horizontalScrollBar()->setPageStep(columnsPerPage_-1);
+        scrollArea_->horizontalScrollBar()->setSingleStep(1);
         scrollArea_->horizontalScrollBar()->setValue(leftColumn_);
     }
     else
     {
         scrollArea_->horizontalScrollBar()->setRange(0,0);
     }
+
+    TRACE_OUT;
 }
 
 void QBinaryDataViewViewport::setupScrollArea(QAbstractScrollArea *scrollArea)
 {
+    TRACE_IN;
+
     scrollArea_ = scrollArea;
 
     if (dataSource_) {
@@ -208,10 +240,14 @@ void QBinaryDataViewViewport::setupScrollArea(QAbstractScrollArea *scrollArea)
         scrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         scrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     }
+
+    TRACE_OUT;
 }
 
 int QBinaryDataViewViewport::linesPerPage() const
 {
+    TRACE_IN;
+    TRACE_OUT;
     return linesPerPage_;
 }
 
@@ -346,6 +382,8 @@ QList<QMap<int,QVariant> > QBinaryDataViewViewport::getDataToRender(int rowsPerS
 
 void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect, const QMap<int,QVariant> &itemData)
 {
+    TRACE_IN;
+
 #if DEBUG_GEOMETRY >= 1
     painter.drawRect(itemRect);
 #endif/**/
@@ -357,6 +395,8 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
     painter.drawText(itemRect,
                      alignment,
                      out);
+
+    TRACE_OUT;
 }
 
 bool QBinaryDataViewViewport::updateGeometry(QPainter &painter)
@@ -385,10 +425,15 @@ bool QBinaryDataViewViewport::updateGeometry(QPainter &painter)
 
 QRegion QBinaryDataViewViewport::calculateAddressBarRegion(QPainter &painter)
 {
+    TRACE_IN;
+
     QRect wrect = rect();
     QRect boundingRect = painter.boundingRect(wrect,0,"DDDDDDD+DD");
     boundingRect.setHeight(wrect.height());
     boundingRect.adjust(0,0,ymargin_,0);
+
+    TRACE_OUT;
+
     return QRegion(boundingRect);
 }
 
@@ -418,7 +463,7 @@ void QBinaryDataViewViewport::paintAddressBar(QPainter &painter, const QStringLi
         QString address = addresses[i];
 
         painter.save();
-        if (currentCursorPosition_.row() == i + topRow())
+        if (currentCursorPosition_.row() == i + topRow_)
         {
             painter.fillRect(itemRect,highlight);
             painter.setPen(highlightedText);
@@ -439,6 +484,8 @@ void QBinaryDataViewViewport::paintAddressBar(QPainter &painter, const QStringLi
 
 QRegion QBinaryDataViewViewport::calculatePresentationBarRegion(QPainter &painter)
 {
+    TRACE_IN;
+
     QRect wrect = rect();
     QString testString;
     int columnCnt = dataSource_->columnCount();
@@ -453,6 +500,9 @@ QRegion QBinaryDataViewViewport::calculatePresentationBarRegion(QPainter &painte
     boundingRect.setLeft(wrect.right() - boundingRect.width());
     boundingRect.setRight(wrect.right());
     boundingRect.setHeight(wrect.height());
+
+    TRACE_OUT;
+
     return QRegion(boundingRect);
 }
 
@@ -480,7 +530,7 @@ void QBinaryDataViewViewport::paintPresenationBar(QPainter &painter, const QStri
 #endif/**/
 
         painter.save();
-        if (currentCursorPosition_.row() == i + topRow())
+        if (currentCursorPosition_.row() == i + topRow_)
         {
             QRect tempRect = itemRect;
             tempRect.adjust(-xmargin_,0,0,0);
@@ -1018,7 +1068,7 @@ void QBinaryDataViewViewport::keyPressEvent (QKeyEvent * event)
     }
 
     if (newIndex.isValid())
-    {
+    {        
         QModelIndex prev = currentCursorPosition_;
 
         currentCursorItemData_.clear();
