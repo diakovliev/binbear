@@ -22,7 +22,7 @@ void QBinaryDataView::setDataSource(QBinaryDataSource *newDataSource)
 {
     Q_ASSERT(viewport_);
     viewport_->setDataSource(newDataSource);
-    viewport_->setupScrollArea(this);
+    viewport_->initScrollArea(this);
 }
 
 QBinaryDataSource *QBinaryDataView::dataSource() const

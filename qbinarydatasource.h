@@ -42,6 +42,8 @@ public:
     QModelIndex nextIndex(const QModelIndex &index) const;
     QModelIndex prevIndex(const QModelIndex &index) const;
 
+    QModelIndex offsetToIndex(quint64 offset) const;
+
 signals:
 
 public slots:

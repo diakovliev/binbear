@@ -2,9 +2,24 @@
 #define QBINARYDATAVIEWVIEWPORT_H
 
 #include <QWidget>
+#include <QVariant>
 #include <QTimer>
+#include <QPointer>
 #include <QScrollArea>
+
 #include "qbinarydatasource.h"
+
+enum ViewportItemDataType {
+    RowIndex = Qt::UserRole + 1,
+    ColumnIndex = Qt::UserRole + 2,
+    Offset = Qt::UserRole + 3,
+    RawOffset = Qt::UserRole + 4,
+    RawData = Qt::UserRole + 5,
+    ViewportRect = Qt::UserRole + 6,
+    ItemVisible = Qt::UserRole + 7
+};
+
+typedef QMap<int, QVariant> ViewportItemData;
 
 class QBinaryDataViewViewport : public QWidget
 {
@@ -13,15 +28,6 @@ public:
 
     enum {CURSOR_TIMEOUT = 500 };
 
-    enum {
-        RowIndex = Qt::UserRole + 1,
-        ColumnIndex = Qt::UserRole + 2,
-        Offset = Qt::UserRole + 3,
-        RawOffset = Qt::UserRole + 4,
-        RawData = Qt::UserRole + 5,
-        ViewportRect = Qt::UserRole + 6,
-        ItemVisible = Qt::UserRole + 7
-    };
 
     explicit QBinaryDataViewViewport(QWidget *parent = 0);
     virtual ~QBinaryDataViewViewport(void);
@@ -36,7 +42,7 @@ public:
     int leftColumn() const;
     int linesPerPage() const;
 
-    void setupScrollArea(QAbstractScrollArea *scrollArea);
+    void initScrollArea(QAbstractScrollArea *scrollArea);
 
     bool isSupportedKeyEvent(QKeyEvent * event);
 
@@ -62,7 +68,7 @@ public slots:
     void cursorBlinkingTrigger();
 
 protected:
-    QList<QMap<int,QVariant> > getDataToRender(int rowsPerScreen);
+    QList<ViewportItemData> getDataToRender(int rowsPerScreen);
 
     void paintItem(QPainter &painter, const QRect &itemRect, const QMap<int,QVariant> &data);
     void paintViewport(QPainter &painter, QStringList &addresses, QStringList &presentations);
@@ -81,41 +87,27 @@ protected:
     void updateCursorPositionByMouseEvent(QMouseEvent * event);
     void setupScrollBars();
 
+    bool isVisibleIndex(const QModelIndex& index) const;
+    void scrollToIndex(const QModelIndex& index);
+    void moveCursorToIndex(const QModelIndex& index);
+
 private:
-    QBinaryDataSource *dataSource_;
-    QAbstractScrollArea *scrollArea_;
-    quint8 groupSize_; /* bytes per group */
-    int linesPerPage_;
-    int columnsPerPage_;
-    bool setupScrollBarsNeeded_;
-    int topRow_;
-    int totalRowCount_;
-    int leftColumn_;
-    int totalColumnCount_;
-
-    int cx_;
-    int cy_;
-    int xmargin_;
-    int ymargin_;
-
-    bool addressBarVisible_;
-    bool presentationBarVisible_;
 
     /* cashe for the data  */
     class CashedData {
         int linesPerPage_;
         int topRow_;
         int totalRowCount_;
-        QList<QMap<int,QVariant> > data_;
+        QList<ViewportItemData> data_;
     public:
         CashedData();
         CashedData( int linesPerPage,
                     int topRow,
                     int totalRowCount,
-                    QList<QMap<int,QVariant> > data
+                    QList<ViewportItemData> data
                     );
         CashedData( const CashedData &src );
-        QList<QMap<int,QVariant> >& data();
+        QList<ViewportItemData >& data();
         bool isCasheActual(
                 int linesPerPage,
                 int topRow,
@@ -123,14 +115,37 @@ private:
                 );
         void reset();
     };
-    CashedData dataCache_;
 
-    QTimer *cursorPaintTimer_;
-    QList<QMap<int,QVariant> > dataOnTheScreen_;
-    QModelIndex currentCursorPosition_;
-    bool cursorVisibility_;
-    QMap<int,QVariant> currentCursorItemData_;
-    QByteArray currentCursorInputBuffer_;
+    QBinaryDataSource*      dataSource_;
+    QAbstractScrollArea*    scrollArea_;
+    quint8                  groupSize_;
+
+    int                     linesPerPage_;
+    int                     columnsPerPage_;
+    bool                    setupScrollBarsNeeded_;
+
+    int                     topRow_;
+    int                     totalRowCount_;
+    int                     leftColumn_;
+    int                     totalColumnCount_;
+
+    int                     cx_;
+    int                     cy_;
+    int                     xmargin_;
+    int                     ymargin_;
+
+    bool                    addressBarVisible_;
+    bool                    presentationBarVisible_;
+
+    CashedData              dataCache_;
+
+    QList<ViewportItemData> dataOnTheScreen_;
+    QPointer<QTimer>        cursorPaintTimer_;
+    bool                    cursorVisibility_;
+
+    QModelIndex             currentCursorPosition_;
+    ViewportItemData        currentCursorItemData_;
+    QByteArray              currentCursorInputBuffer_;
 };
 
 #endif // QBINARYDATAVIEWVIEWPORT_H

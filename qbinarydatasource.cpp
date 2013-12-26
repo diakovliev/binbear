@@ -62,6 +62,13 @@ QModelIndex QBinaryDataSource::index(int row, int column, const QModelIndex &par
 {
     Q_UNUSED(parent);
 
+    quint64 pos = row * viewWidth_ + column;
+    quint64 size = ioDevice_->size();
+    if (pos >= size)
+    {
+        return QModelIndex();
+    }
+
     return createIndex(row, column, 0);
 }
 
@@ -79,10 +86,7 @@ QModelIndex QBinaryDataSource::nextIndex(const QModelIndex &index) const
     if ( size - 1 < pos )
         return QModelIndex();
 
-    int row     = pos / viewWidth_;
-    int column  = pos % viewWidth_;
-
-    return createIndex(row, column, 0);
+    return offsetToIndex(pos);
 }
 
 /******************************************************************************/
@@ -97,8 +101,14 @@ QModelIndex QBinaryDataSource::prevIndex(const QModelIndex &index) const
     quint64 pos = index.row() * viewWidth_ + index.column();
     --pos;
 
-    int row     = pos / viewWidth_;
-    int column  = pos % viewWidth_;
+    return offsetToIndex(pos);
+}
+
+/******************************************************************************/
+QModelIndex QBinaryDataSource::offsetToIndex(quint64 offset) const
+{
+    int row     = offset / viewWidth_;
+    int column  = offset % viewWidth_;
 
     return createIndex(row, column, 0);
 }

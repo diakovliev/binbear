@@ -60,16 +60,19 @@ QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
     , addressBarVisible_(true)
     , presentationBarVisible_(true)
     , dataCache_()
-    , cursorPaintTimer_(NULL)
     , dataOnTheScreen_()
-    , currentCursorPosition_(QModelIndex())
+    , cursorPaintTimer_(NULL)
     , cursorVisibility_(true)
+    , currentCursorPosition_(QModelIndex())
     , currentCursorItemData_()
     , currentCursorInputBuffer_()
 {
     TRACE_IN;
 
     cursorPaintTimer_ = new QTimer(this);
+    cursorPaintTimer_->setInterval(CURSOR_TIMEOUT);
+    cursorPaintTimer_->setSingleShot(false);
+
     connect(cursorPaintTimer_, SIGNAL(timeout()), this, SLOT(cursorBlinkingTrigger()));
 
     TRACE_OUT;
@@ -147,14 +150,11 @@ void QBinaryDataViewViewport::setLeftColumn(int leftColumn)
 {
     TRACE_IN;
 
-    if (!dataSource_) return;
-
-    int totalColumnCount = dataSource_->columnCount(QModelIndex());
     int newLeftColumn = leftColumn;
 
-    if (newLeftColumn + columnsPerPage_ > totalColumnCount)
+    if (newLeftColumn + columnsPerPage_ > totalColumnCount_)
     {
-        newLeftColumn = totalColumnCount - columnsPerPage_;
+        newLeftColumn = totalColumnCount_ - columnsPerPage_;
     }
 
     if (leftColumn_ != newLeftColumn) {
@@ -172,22 +172,36 @@ int QBinaryDataViewViewport::leftColumn() const
     return leftColumn_;
 }
 
+void QBinaryDataViewViewport::scrollToIndex(const QModelIndex& index)
+{
+    TRACE_IN;
+
+    while (topRow_ > index.row())
+        --topRow_;
+    while (topRow_ + linesPerPage_ < index.row() + 1)
+        ++topRow_;
+
+    scrollArea_->verticalScrollBar()->setValue(topRow_);
+
+    while (leftColumn_ > index.column())
+        --leftColumn_;
+    while (leftColumn_ + columnsPerPage_ < index.column() + 1)
+        ++leftColumn_;
+
+    scrollArea_->horizontalScrollBar()->setValue(leftColumn_);
+
+    update();
+
+    TRACE_OUT;
+}
+
 void QBinaryDataViewViewport::setupScrollBars()
 {
     TRACE_IN;
 
-    if (!scrollArea_ || !dataSource_)
+    if (totalRowCount_ > 0 && linesPerPage_ < totalRowCount_)
     {
-        TRACE_OUT;
-        return;
-    }
-
-    int totalRowCount = dataSource_->rowCount(QModelIndex());
-    int totalColumnCount = dataSource_->columnCount(QModelIndex());
-
-    if (totalRowCount > 0 && linesPerPage_ < totalRowCount)
-    {
-        scrollArea_->verticalScrollBar()->setRange(0, totalRowCount-linesPerPage_-1);
+        scrollArea_->verticalScrollBar()->setRange(0, totalRowCount_-linesPerPage_);
         scrollArea_->verticalScrollBar()->setPageStep(linesPerPage_-1);
         scrollArea_->verticalScrollBar()->setSingleStep(1);
         scrollArea_->verticalScrollBar()->setValue(topRow_);
@@ -197,9 +211,9 @@ void QBinaryDataViewViewport::setupScrollBars()
         scrollArea_->verticalScrollBar()->setRange(0,0);
     }
 
-    if (totalColumnCount > 0 && columnsPerPage_ > 0 && totalColumnCount > columnsPerPage_)
+    if (totalColumnCount_ > 0 && columnsPerPage_ > 0 && totalColumnCount_ > columnsPerPage_)
     {
-        scrollArea_->horizontalScrollBar()->setRange(0, totalColumnCount - columnsPerPage_);
+        scrollArea_->horizontalScrollBar()->setRange(0, totalColumnCount_-columnsPerPage_);
         scrollArea_->horizontalScrollBar()->setPageStep(columnsPerPage_-1);
         scrollArea_->horizontalScrollBar()->setSingleStep(1);
         scrollArea_->horizontalScrollBar()->setValue(leftColumn_);
@@ -212,14 +226,14 @@ void QBinaryDataViewViewport::setupScrollBars()
     TRACE_OUT;
 }
 
-void QBinaryDataViewViewport::setupScrollArea(QAbstractScrollArea *scrollArea)
+void QBinaryDataViewViewport::initScrollArea(QAbstractScrollArea *scrollArea)
 {
     TRACE_IN;
 
     scrollArea_ = scrollArea;
 
-    if (dataSource_) {
-
+    if (dataSource_)
+    {
         scrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         scrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
 
@@ -228,10 +242,9 @@ void QBinaryDataViewViewport::setupScrollArea(QAbstractScrollArea *scrollArea)
 
         connect(scrollArea_->horizontalScrollBar(), SIGNAL(valueChanged(int)),
                 this, SLOT(setLeftColumn(int)));
-
-    } else {
-        /*reset all*/
-
+    }
+    else
+    {
         disconnect(scrollArea_->verticalScrollBar(), SIGNAL(valueChanged(int)),
                    this, SLOT(setTopRow(int)));
         disconnect(scrollArea_->horizontalScrollBar(), SIGNAL(valueChanged(int)),
@@ -240,6 +253,8 @@ void QBinaryDataViewViewport::setupScrollArea(QAbstractScrollArea *scrollArea)
         scrollArea_->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
         scrollArea_->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     }
+
+    setupScrollBarsNeeded_ = true;
 
     TRACE_OUT;
 }
@@ -255,13 +270,17 @@ void QBinaryDataViewViewport::resizeEvent(QResizeEvent * event)
 {
     TRACE_IN;
 
-    QSize oldSize = event->oldSize();
-    QSize size = event->size();
+    Q_UNUSED(event);
+
+    //QSize oldSize = event->oldSize();
+    //QSize size = event->size();
     //qDebug("%d x %d -> %d x %d", oldSize.width(), oldSize.height(),
     //       size.width(), size.height());
 
-    leftColumn_ = 0;
     setupScrollBarsNeeded_ = true;
+
+    scrollToIndex(currentCursorPosition_);
+
     update();
 
     TRACE_OUT;
@@ -285,14 +304,14 @@ void QBinaryDataViewViewport::CashedData::reset() {
      data_.clear();
 }
 
-QList<QMap<int,QVariant> >& QBinaryDataViewViewport::CashedData::data() {
+QList<ViewportItemData>& QBinaryDataViewViewport::CashedData::data() {
     return data_;
 }
 
 QBinaryDataViewViewport::CashedData::CashedData( int linesPerPage,
             int topRow,
             int totalRowCount,
-            QList<QMap<int,QVariant> > data
+            QList<ViewportItemData> data
             )
             : linesPerPage_(linesPerPage)
             , topRow_(topRow)
@@ -311,35 +330,41 @@ QBinaryDataViewViewport::CashedData::CashedData()
     , totalRowCount_(0)
     , data_() {}
 
-QList<QMap<int,QVariant> > QBinaryDataViewViewport::getDataToRender(int rowsPerScreen)
+QList<ViewportItemData> QBinaryDataViewViewport::getDataToRender(int rowsPerScreen)
 {
-    QList<QMap<int,QVariant> > dataToRender;
+    QList<ViewportItemData > dataToRender;
     if (!dataSource_)
         return dataToRender;
 
     Q_ASSERT_X(dataSource_, __FUNCTION__, "Data source is NULL");
-    totalRowCount_ = dataSource_->rowCount(QModelIndex());
-    totalColumnCount_ = dataSource_->columnCount(QModelIndex());
+
+    totalRowCount_      = dataSource_->rowCount(QModelIndex());
+    totalColumnCount_   = dataSource_->columnCount(QModelIndex());
 
     if (!dataCache_.isCasheActual(rowsPerScreen,topRow_,totalRowCount_)) {
 
         /* retrieve data from the model */
         int idx,startIdx;
-        if (topRow_ < totalRowCount_) {
+        if (topRow_ < totalRowCount_)
+        {
             idx = topRow_;
             startIdx = topRow_;
-        } else {
+        } else
+        {
             return dataToRender;
         }
 
         Q_ASSERT(idx >= 0);
 
-        while (idx < startIdx + rowsPerScreen && idx < totalRowCount_) {
-            for (int col = 0; col < totalColumnCount_; ++col) {
+        while (idx < startIdx + rowsPerScreen && idx < totalRowCount_)
+        {
+            for (int col = 0; col < totalColumnCount_; ++col)
+            {
                 QModelIndex index = dataSource_->index(idx,col);
                 QVariant data = dataSource_->data(index,Qt::UserRole);
-                if (!data.isNull()) {
-                    QMap<int,QVariant> itemData = dataSource_->itemData(index);
+                if (!data.isNull())
+                {
+                    ViewportItemData itemData = dataSource_->itemData(index);
                     QMap<QString,QVariant> userData = data.toMap();
 
                     itemData[RawData] = userData["char"];
@@ -380,7 +405,7 @@ QList<QMap<int,QVariant> > QBinaryDataViewViewport::getDataToRender(int rowsPerS
   */
 
 
-void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect, const QMap<int,QVariant> &itemData)
+void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect, const ViewportItemData &itemData)
 {
     TRACE_IN;
 
@@ -468,7 +493,7 @@ void QBinaryDataViewViewport::paintAddressBar(QPainter &painter, const QStringLi
             painter.fillRect(itemRect,highlight);
             painter.setPen(highlightedText);
             address += QString().sprintf("+%02X", currentCursorPosition_.column()
-                                          % dataSource_->columnCount(QModelIndex()));
+                                          % totalColumnCount_);
         }
 
         painter.drawText(itemRect,
@@ -488,7 +513,7 @@ QRegion QBinaryDataViewViewport::calculatePresentationBarRegion(QPainter &painte
 
     QRect wrect = rect();
     QString testString;
-    int columnCnt = dataSource_->columnCount();
+    int columnCnt = totalColumnCount_;
 
     if (columnCnt > 0)
     {
@@ -577,15 +602,11 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
     /* retrieve data to render */
     dataOnTheScreen_.clear();
-    QList<QMap<int,QVariant> > dataToRender = getDataToRender(linesPerPage_);
+    QList<ViewportItemData> dataToRender = getDataToRender(linesPerPage_);
     if (dataToRender.isEmpty()) {
         TRACE_OUT;
         return;
     }
-
-    /* update vertical scroll bar params */
-    scrollArea_->verticalScrollBar()->setRange(0,totalRowCount_-linesPerPage_);
-    scrollArea_->verticalScrollBar()->setPageStep(linesPerPage_-1);
 
     /* total rows count */
     int rows = dataToRender.count();
@@ -596,8 +617,8 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
     /* Raw view buffer */
     QString rawViewData;
 
-    QModelIndex firstVisibleIndex;
-    QMap<int,QVariant> firstVisibleData;
+//    QModelIndex firstVisibleIndex;
+//    ViewportItemData firstVisibleData;
 
     // {{ CURSOR resetItemVisibility
     currentCursorItemData_[ItemVisible] = false;
@@ -623,7 +644,7 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
             /* item data offset */
             int offset = (i* columnCount) + j;            
             if (offset < dataToRender.count()) {
-                QMap<int,QVariant> itemData = dataToRender.at(offset);
+                ViewportItemData itemData = dataToRender.at(offset);
                 itemData[Offset] = offset;
 
                 // address for the first element in line
@@ -632,53 +653,52 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
                 }
 
-                if (leftColumn_ <= j){
-
+                if (leftColumn_ <= j)
+                {
                     itemData.remove(ViewportRect);
 
+                    QRect itemRect = QRect(x,y,cx_,cy_);
+                    QRegion intersectedRegion = painter.clipRegion().intersected(itemRect);
+                    if (!intersectedRegion.isEmpty() &&
+                         QRegion(itemRect) == intersectedRegion)
                     {
                         ScopedPainter p(&painter);
-                        QRect itemRect = QRect(x,y,cx_,cy_);
-                        QRegion intersectedRegion = painter.clipRegion().intersected(itemRect);
-                        if (!intersectedRegion.isEmpty() &&
-                             QRegion(itemRect) == intersectedRegion)
+                        paintItem(painter, itemRect, itemData);
+
+                        itemData[ViewportRect] = itemRect;
+
+                        // {{ CURSOR ???
+//                        if ( !firstVisibleIndex.isValid() &&
+//                              (currentCursorPosition_.column() == itemData[ColumnIndex].toInt() ||
+//                               j > currentCursorPosition_.column()) )
+//                        {
+//                            firstVisibleIndex = dataSource_->index(itemData[RowIndex].toInt(),
+//                                                                   itemData[ColumnIndex].toInt());
+//                            firstVisibleData = itemData;
+//                        }
+                        // }} CURSOR
+
+                        // {{ CURSOR setItemVisibility
+                        if (currentCursorPosition_.isValid() &&
+                            itemData[RowIndex] == currentCursorPosition_.row() &&
+                            itemData[ColumnIndex] == currentCursorPosition_.column()
+                            )
                         {
-                            paintItem(painter, itemRect, itemData);
-                            itemData[ViewportRect] = itemRect;
-
-                            // {{ CURSOR ???
-                            if ( !firstVisibleIndex.isValid() &&
-                                  (currentCursorPosition_.column() == itemData[ColumnIndex].toInt() ||
-                                   j > currentCursorPosition_.column()) )
-                            {
-                                firstVisibleIndex = dataSource_->index(itemData[RowIndex].toInt(),
-                                                                       itemData[ColumnIndex].toInt());
-                                firstVisibleData = itemData;
-                            }
-                            // }} CURSOR
-
-                            // {{ CURSOR setItemVisibility
-                            if (currentCursorPosition_.isValid() &&
-                                itemData[RowIndex] == currentCursorPosition_.row() &&
-                                itemData[ColumnIndex] == currentCursorPosition_.column()
-                                )
-                            {
-                                currentCursorItemData_              = itemData;
-                                currentCursorItemData_[ItemVisible] = true;
-                            }
-                            // }} CURSOR
-
-                            // Cache rendered data
-                            dataOnTheScreen_.append(itemData);
+                            currentCursorItemData_              = itemData;
+                            currentCursorItemData_[ItemVisible] = true;
                         }
-                        else
+                        // }} CURSOR
+
+                        // Cache rendered data
+                        dataOnTheScreen_.append(itemData);
+                    }
+                    else
+                    {
+                        // Not visible column
+                        if (rightColumn == -1)
                         {
-                            // Not visible column
-                            if (rightColumn == -1)
-                            {
-                                //qDebug() << "NOT VISIBLE COLUMN:" << j;
-                                rightColumn = j - 1;
-                            }
+                            //qDebug() << "NOT VISIBLE COLUMN:" << j;
+                            rightColumn = j - 1;
                         }
                     }
                 }
@@ -718,12 +738,12 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
     //qDebug() << "COLUMNS PER PAGE:" << columnsPerPage_;
 
     // {{ CURSOR setupCursor
-    if (!currentCursorItemData_[ItemVisible].toBool())
-    {
-        currentCursorPosition_              = firstVisibleIndex;
-        currentCursorItemData_              = firstVisibleData;
-        currentCursorItemData_[ItemVisible] = true;
-    }
+//    if (!currentCursorItemData_[ItemVisible].toBool())
+//    {
+//        currentCursorPosition_              = firstVisibleIndex;
+//        currentCursorItemData_              = firstVisibleData;
+//        currentCursorItemData_[ItemVisible] = true;
+//    }
     // }} CURSOR
 
     TRACE_OUT;
@@ -740,7 +760,6 @@ void QBinaryDataViewViewport::paintCursor(QPainter &painter)
             presentation.append("_");
         currentCursorItemData_[Qt::DisplayRole] = presentation;
     }
-
 
     // {{ CURSOR paint
     QStyle *currentStyle = style();
@@ -874,8 +893,6 @@ void QBinaryDataViewViewport::startCursorBlinking()
 
     if (hasFocus())
     {
-        cursorPaintTimer_->setInterval(CURSOR_TIMEOUT);
-        cursorPaintTimer_->setSingleShot(false);
         cursorPaintTimer_->start();
     }
 
@@ -927,7 +944,7 @@ void QBinaryDataViewViewport::mouseMoveEvent( QMouseEvent * event)
 
     //qDebug("MOUSE MOVE   x: %d y: %d", event->pos().x(), event->pos().y());
 
-    QList<QMap<int,QVariant> >::const_iterator iter = dataOnTheScreen_.constBegin();
+    QList<ViewportItemData>::const_iterator iter = dataOnTheScreen_.constBegin();
     while (iter != dataOnTheScreen_.constEnd()) {
         QRegion itemRegion = (*iter)[ViewportRect].toRect();
         if (itemRegion.contains(event->pos()))
@@ -947,7 +964,7 @@ void QBinaryDataViewViewport::updateCursorPositionByMouseEvent(QMouseEvent * eve
 {
     TRACE_IN;
 
-    QList<QMap<int,QVariant> >::const_iterator iter = dataOnTheScreen_.constBegin();
+    QList<ViewportItemData>::const_iterator iter = dataOnTheScreen_.constBegin();
     while (iter != dataOnTheScreen_.constEnd()) {
         QRegion itemRegion = (*iter)[ViewportRect].toRect();
         if (itemRegion.contains(event->pos()))
@@ -1010,13 +1027,19 @@ bool QBinaryDataViewViewport::isSupportedKeyEvent(QKeyEvent * event)
     {
         res = true;
     }
-    //if (event->key() == Qt::Key_Less)
-    if (event->key() == Qt::Key_F1)
+    if (event->key() == Qt::Key_Left)
     {
         res = true;
     }
-    //else if (event->key() == Qt::Key_Greater)
-    if (event->key() == Qt::Key_F2)
+    if (event->key() == Qt::Key_Right)
+    {
+        res = true;
+    }
+    if (event->key() == Qt::Key_Up)
+    {
+        res = true;
+    }
+    if (event->key() == Qt::Key_Down)
     {
         res = true;
     }
@@ -1024,6 +1047,43 @@ bool QBinaryDataViewViewport::isSupportedKeyEvent(QKeyEvent * event)
     TRACE_OUT;
 
     return res;
+}
+
+bool QBinaryDataViewViewport::isVisibleIndex(const QModelIndex& index) const
+{
+    TRACE_IN;
+
+    bool res = false;
+
+    QList<ViewportItemData>::const_iterator iter = dataOnTheScreen_.constBegin();
+    while (iter != dataOnTheScreen_.constEnd() && !res) {
+        res =   (*iter)[RowIndex].toInt() == index.row() &&
+                (*iter)[ColumnIndex].toInt() == index.column();
+        ++iter;
+    }
+
+    TRACE_OUT;
+
+    return res;
+}
+
+void QBinaryDataViewViewport::moveCursorToIndex(const QModelIndex& index)
+{
+    QModelIndex prev = currentCursorPosition_;
+
+    currentCursorItemData_.clear();
+    currentCursorPosition_ = index;
+
+    if (!isVisibleIndex(currentCursorPosition_))
+    {
+        scrollToIndex(currentCursorPosition_);
+    }
+
+    emit cursorPositionChanged(prev, currentCursorPosition_);
+
+    // Force show cursor
+    cursorVisibility_ = true;
+    repaint();
 }
 
 void QBinaryDataViewViewport::keyPressEvent (QKeyEvent * event)
@@ -1038,7 +1098,7 @@ void QBinaryDataViewViewport::keyPressEvent (QKeyEvent * event)
         //qDebug() << "INPUT  c: '" << event->text() << "'";
 
         // {{ CURSOR addToInputBuffer
-        currentCursorInputBuffer_.append(event->text().at(0).toAscii());
+        currentCursorInputBuffer_.append(event->text().toUpper().at(0).toAscii());
         if (currentCursorInputBuffer_.size() >= 2)
         {
             QString presentation = QString::fromAscii(currentCursorInputBuffer_);
@@ -1056,29 +1116,26 @@ void QBinaryDataViewViewport::keyPressEvent (QKeyEvent * event)
         }
         // }} CURSOR
     }
-    //if (event->key() == Qt::Key_Less)
-    else if (event->key() == Qt::Key_F1)
+    else if (event->key() == Qt::Key_Left)
     {
         newIndex = dataSource_->prevIndex(currentCursorPosition_);
     }
-    //else if (event->key() == Qt::Key_Greater)
-    else if (event->key() == Qt::Key_F2)
+    else if (event->key() == Qt::Key_Right)
     {
         newIndex = dataSource_->nextIndex(currentCursorPosition_);
     }
+    else if (event->key() == Qt::Key_Up)
+    {
+        newIndex = dataSource_->index(currentCursorPosition_.row()-1,currentCursorPosition_.column());
+    }
+    else if (event->key() == Qt::Key_Down)
+    {
+        newIndex = dataSource_->index(currentCursorPosition_.row()+1,currentCursorPosition_.column());
+    }
 
     if (newIndex.isValid())
-    {        
-        QModelIndex prev = currentCursorPosition_;
-
-        currentCursorItemData_.clear();
-        currentCursorPosition_ = newIndex;
-
-        emit cursorPositionChanged(prev, currentCursorPosition_);
-
-        // Force show cursor
-        cursorVisibility_ = true;
-        repaint();
+    {
+        moveCursorToIndex(newIndex);
     }
 
     event->accept();
