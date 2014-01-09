@@ -196,17 +196,10 @@ void QBinaryDataViewViewport::scrollToIndex(const QModelIndex& index)
     while (topRow_ + linesPerPage_ < index.row() + 1)
         ++topRow_;
 
-    if (columnsOnView_ == totalColumnCount_)
-    {
-        leftColumn_ = 0;
-    }
-    else
-    {
-        while (leftColumn_ > index.column())
-            --leftColumn_;
-        while (leftColumn_ + columnsOnView_ < index.column() + 1)
-            ++leftColumn_;
-    }
+    while (leftColumn_ > index.column())
+        --leftColumn_;
+    while (leftColumn_ + columnsOnView_ < index.column() + 1)
+        ++leftColumn_;
 
     setupScrollBarsNeeded_ = true;
 

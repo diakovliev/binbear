@@ -8,6 +8,7 @@
 #include <QSharedPointer>
 
 class QBinaryDataInterpretation;
+class QBinaryDataSourceProxy;
 
 class QBinaryDataSource : public QAbstractItemModel
 {
@@ -33,9 +34,10 @@ public:
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     int rowCount(const QModelIndex & parent = QModelIndex()) const;
     int columnCount(const QModelIndex & parent = QModelIndex()) const;
-    QVariant data(const QModelIndex &index, int role) const;
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+
+    QVariant data(const QModelIndex &index, int role) const;
     bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
 
     /* Data navigation */
@@ -44,6 +46,9 @@ public:
 
     QModelIndex offsetToIndex(quint64 offset) const;
     quint64 indexToOffset(QModelIndex index) const;
+
+    /* Edit proxy */
+    QBinaryDataSourceProxy *createProxy();
 
 signals:
 

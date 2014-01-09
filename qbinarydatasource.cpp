@@ -1,4 +1,5 @@
 #include "qbinarydatasource.h"
+#include "qbinarydatasourceproxy.h"
 
 #include <limits>
 
@@ -315,4 +316,10 @@ void QBinaryDataSource::setInterpretation(QBinaryDataInterpretation *interptreta
 QBinaryDataInterpretation *QBinaryDataSource::interpretation() const
 {
     return 0;
+}
+
+/******************************************************************************/
+QBinaryDataSourceProxy *QBinaryDataSource::createProxy()
+{
+    return new QBinaryDataSourceProxy(this);
 }
