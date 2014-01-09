@@ -47,7 +47,7 @@ QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
     , scrollArea_(0)
     , groupSize_(4)
     , linesPerPage_(1)
-    , columnsPerPage_(1)
+    , columnsOnView_(1)
     , setupScrollBarsNeeded_(false)
     , topRow_(0)
     , totalRowCount_(0)
@@ -89,19 +89,24 @@ void QBinaryDataViewViewport::setDataSource(QBinaryDataSource *newDataSource)
 {
     TRACE_IN;
 
-    if (newDataSource != dataSource_) {
+    if (newDataSource != dataSource_)
+    {
         dataSource_ = newDataSource;
         topRow_ = 0;
         leftColumn_ = 0;
         totalRowCount_ = 0;
         totalColumnCount_ = 0;
         dataCache_.reset();
+        cursorVisibility_ = true;
         currentCursorItemData_.clear();
         currentCursorInputBuffer_.clear();
-
         if (dataSource_)
         {
             currentCursorPosition_ = dataSource_->index(0, 0);
+        }
+        else
+        {
+            currentCursorPosition_ = QModelIndex();
         }
 
         update();
@@ -137,10 +142,16 @@ int QBinaryDataViewViewport::groupSize() const
 void QBinaryDataViewViewport::setTopRow(int topRow)
 {
     TRACE_IN;
-    if (topRow != topRow_) {
+
+    if (topRow != topRow_)
+    {
         topRow_ = topRow;
+
+        setupScrollBarsNeeded_ = true;
+
         update();
     }
+
     TRACE_OUT;
 }
 
@@ -155,15 +166,12 @@ void QBinaryDataViewViewport::setLeftColumn(int leftColumn)
 {
     TRACE_IN;
 
-    int newLeftColumn = leftColumn;
-
-    if (columnsPerPage_ >= totalColumnCount_)
+    if (leftColumn_ != leftColumn)
     {
-        newLeftColumn = totalColumnCount_ - columnsPerPage_;
-    }
+        leftColumn_ = leftColumn;
 
-    if (leftColumn_ != newLeftColumn) {
-        leftColumn_ = newLeftColumn;
+        setupScrollBarsNeeded_ = true;
+
         update();
     }
 
@@ -188,15 +196,32 @@ void QBinaryDataViewViewport::scrollToIndex(const QModelIndex& index)
     while (topRow_ + linesPerPage_ < index.row() + 1)
         ++topRow_;
 
-    while (leftColumn_ > index.column())
-        --leftColumn_;
-    while (leftColumn_ + columnsPerPage_ < index.column() + 1)
-        ++leftColumn_;
+    if (columnsOnView_ == totalColumnCount_)
+    {
+        leftColumn_ = 0;
+    }
+    else
+    {
+        while (leftColumn_ > index.column())
+            --leftColumn_;
+        while (leftColumn_ + columnsOnView_ < index.column() + 1)
+            ++leftColumn_;
+    }
 
-    scrollArea_->verticalScrollBar()->setValue(topRow_);
-    scrollArea_->horizontalScrollBar()->setValue(leftColumn_);
+    setupScrollBarsNeeded_ = true;
 
     update();
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::resizeEvent(QResizeEvent * event)
+{
+    TRACE_IN;
+
+    Q_UNUSED(event);
+
+    scrollToIndex(currentCursorPosition_);
 
     TRACE_OUT;
 }
@@ -212,19 +237,25 @@ void QBinaryDataViewViewport::setupScrollBars()
         scrollArea_->verticalScrollBar()->setRange(0, totalRowCount_-linesPerPage_);
         scrollArea_->verticalScrollBar()->setPageStep(linesPerPage_-1);
         scrollArea_->verticalScrollBar()->setSingleStep(1);
-        scrollArea_->verticalScrollBar()->setValue(topRow_);
+        if (scrollArea_->verticalScrollBar()->value() != topRow_)
+        {
+            scrollArea_->verticalScrollBar()->setValue(topRow_);
+        }
     }
     else
     {
         scrollArea_->verticalScrollBar()->setRange(0,0);
     }
 
-    if (totalColumnCount_ > 0 && columnsPerPage_ < totalColumnCount_ )
+    if (totalColumnCount_ > 0 && columnsOnView_ < totalColumnCount_ )
     {
-        scrollArea_->horizontalScrollBar()->setRange(0, totalColumnCount_-columnsPerPage_);
-        scrollArea_->horizontalScrollBar()->setPageStep(columnsPerPage_-1);
+        scrollArea_->horizontalScrollBar()->setRange(0, totalColumnCount_-columnsOnView_);
+        scrollArea_->horizontalScrollBar()->setPageStep(columnsOnView_-1);
         scrollArea_->horizontalScrollBar()->setSingleStep(1);
-        scrollArea_->horizontalScrollBar()->setValue(leftColumn_);
+        if (scrollArea_->horizontalScrollBar()->value() != leftColumn_)
+        {
+            scrollArea_->horizontalScrollBar()->setValue(leftColumn_);
+        }
     }
     else
     {
@@ -271,24 +302,6 @@ int QBinaryDataViewViewport::linesPerPage() const
     TRACE_IN;
     TRACE_OUT;
     return linesPerPage_;
-}
-
-void QBinaryDataViewViewport::resizeEvent(QResizeEvent * event)
-{
-    TRACE_IN;
-
-    Q_UNUSED(event);
-
-    //QSize oldSize = event->oldSize();
-    //QSize size = event->size();
-    //qDebug("%d x %d -> %d x %d", oldSize.width(), oldSize.height(),
-    //       size.width(), size.height());
-
-    setupScrollBarsNeeded_ = true;
-
-    scrollToIndex(currentCursorPosition_);
-
-    TRACE_OUT;
 }
 
 bool QBinaryDataViewViewport::CashedData::isCasheActual(
@@ -687,11 +700,8 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
                         // Viewport xoffset for the next item
                         x += xmargin_ + cx_;
-                    }
-                    else
-                    {
-                        // Not visible column
-                        rightColumn = rightColumn == -1 ? j : rightColumn;
+
+                        rightColumn = qMax(rightColumn, j + 1);
                     }
                 }
 
@@ -711,15 +721,15 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
     if (rightColumn == -1)
     {
-        // All columns visible
-        columnsPerPage_ = totalColumnCount_;
+        // All columns not visible
+        columnsOnView_ = 0;
     }
     else
     {
-        columnsPerPage_ = rightColumn - leftColumn_;
+        columnsOnView_ = rightColumn - leftColumn_;
     }
 
-    //qDebug() << "leftColumn_:" << leftColumn_ << "columnsPerPage_:" << columnsPerPage_ << "totalColumnCount_:" << totalColumnCount_;
+    //qDebug() << "leftColumn_:" << leftColumn_ << "columnsOnView_:" << columnsOnView_ << "totalColumnCount_:" << totalColumnCount_;
 
     TRACE_OUT;
 }

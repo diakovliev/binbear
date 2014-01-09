@@ -13,5 +13,6 @@ HEADERS += mainwindow.h \
     qbinarydatasource.h \
     qbinarydataview.h \
     qbinarydataviewviewport.h \
-    qbinarydatainterpretation.h
+    qbinarydatainterpretation.h \
+    binbear.h
 FORMS += mainwindow.ui

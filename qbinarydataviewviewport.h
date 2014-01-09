@@ -122,7 +122,7 @@ private:
     quint8                  groupSize_;
 
     int                     linesPerPage_;
-    int                     columnsPerPage_;
+    int                     columnsOnView_;
     bool                    setupScrollBarsNeeded_;
 
     int                     topRow_;

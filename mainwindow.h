@@ -18,9 +18,13 @@ protected:
     void closeCurrentFile();
     void openFile(const QString &fileName);
 
+    void readSettings();
+    void closeEvent(QCloseEvent *event);
+
 public slots:
     void on_action_gotoAddress_triggered();
     void on_action_Open_triggered();
+    void on_action_Quit_triggered();
 
 signals:
 
