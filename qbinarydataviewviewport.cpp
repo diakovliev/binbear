@@ -9,6 +9,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QStyleOptionFocusRect>
+#include <QColor>
 
 #define DEBUG_GEOMETRY 0
 //#define TRACE
@@ -85,7 +86,7 @@ QBinaryDataViewViewport::~QBinaryDataViewViewport(void)
     TRACE_OUT;
 }
 
-void QBinaryDataViewViewport::setDataSource(QBinaryDataSource *newDataSource)
+void QBinaryDataViewViewport::setDataSource(QAbstractBinaryDataSource *newDataSource)
 {
     TRACE_IN;
 
@@ -115,7 +116,7 @@ void QBinaryDataViewViewport::setDataSource(QBinaryDataSource *newDataSource)
     TRACE_OUT;
 }
 
-QBinaryDataSource *QBinaryDataViewViewport::dataSource() const
+QAbstractBinaryDataSource *QBinaryDataViewViewport::dataSource() const
 {
     TRACE_IN;
     TRACE_OUT;
@@ -427,6 +428,18 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
     QString out = itemData[Qt::DisplayRole].toString();
     int alignment = itemData[Qt::TextAlignmentRole].toUInt();
 
+    // Changed data
+    QModelIndex index = dataSource_->index(itemData[RowIndex].toInt(), itemData[ColumnIndex].toInt());
+    if (index.isValid())
+    {
+        QVariant bg = dataSource_->data(index, Qt::BackgroundRole);
+        if (!bg.isNull())
+        {
+            QBrush background(bg.value<QColor>());
+            painter.setBackground(background);
+        }
+    }
+
     painter.fillRect(itemRect, painter.background());
     painter.drawText(itemRect,
                      alignment,
@@ -699,7 +712,9 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
                 }
 
                 /* collecting raw data */
-                QChar ch = itemData[RawData].toChar();
+                //QChar ch = itemData[RawData].toChar();
+                int i = itemData[Qt::DisplayRole].toString().toInt(0, 16);
+                QChar ch = QChar::fromLatin1(i);
                 rawViewData.append(ch.isPrint()?ch:NOT_PRINTABLE_ITEM);
             }
         }

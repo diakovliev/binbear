@@ -10,16 +10,18 @@
 #include "ui_mainwindow.h"
 
 #include "qbinarydatasource.h"
+#include "qbinarydatasourceproxy.h"
 #include "qbinarydatainterpretation.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
-    ui(new Ui::MainWindow)
+MainWindow::MainWindow(QWidget *parent)
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+    , currentFile_(0)
+    , currentDS_(0)
 {    
     ui->setupUi(this);
 
     //--------------------------------------------
-    //connect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
     //connect(ui->action_Open, SIGNAL(triggered()), this, SLOT(on_action_Open_triggered()));
 
     readSettings();
@@ -65,24 +67,47 @@ void MainWindow::on_action_gotoAddress_triggered()
     }
 }
 
-void MainWindow::closeCurrentFile()
+void MainWindow::on_action_commitChanges_triggered()
 {
+    QBinaryDataSourceProxy *editorProxy =
+            qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
+    if (editorProxy)
+    {
+        editorProxy->commitChanges();
+    }
+}
+
+void MainWindow::on_action_revertChanges_triggered()
+{
+    QBinaryDataSourceProxy *editorProxy =
+            qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
+    if (editorProxy)
+    {
+        editorProxy->revertChanges();
+    }
+}
+
+void MainWindow::closeCurrentFile()
+{    
     disconnect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
+    disconnect(ui->actionCommit_changes, SIGNAL(triggered()), this, SLOT(on_action_commitChanges_triggered()));
+    disconnect(ui->actionRevert_changes, SIGNAL(triggered()), this, SLOT(on_action_revertChanges_triggered()));
+
     ui->actionGoto_address->setEnabled(false);
+    ui->actionCommit_changes->setEnabled(false);
+    ui->actionRevert_changes->setEnabled(false);
+
     setWindowTitle(APP_NAME);
 
     if (ui->binaryDataView->dataSource() != 0)
     {
-        QBinaryDataSource *ds = ui->binaryDataView->dataSource();
         ui->binaryDataView->setDataSource(0);
-        if (ds) {
-            QIODevice *f = ds->detachFrom();
-            if(f) {
-                f->close();
-                delete f;
-            }
-            delete ds;
-        }
+        currentDS_->detachFrom();
+        currentFile_->close();
+        delete currentFile_;
+        currentFile_ = 0;
+        delete currentDS_;
+        currentDS_ = 0;
     }
 }
 
@@ -90,25 +115,31 @@ void MainWindow::openFile(const QString &fileName)
 {
     QSettings settings(COMPANY_NAME, APP_NAME);
 
-    QFile *f = new QFile(fileName);
-    if ( !f->open(QIODevice::ReadWrite) )
+    currentFile_ = new QFile(fileName);
+    if ( !currentFile_->open(QIODevice::ReadWrite) )
     {
         qDebug() << "Unable to open file:" << fileName;
-        f->close();
-        delete f;
-        f = 0;
+        currentFile_->close();
+        delete currentFile_;
+        currentFile_ = 0;
     }
-    if (f)
+    if (currentFile_)
     {
-        QBinaryDataSource *ds = new QBinaryDataSource(ui->binaryDataView);
-        ds->attachTo(f);
-        ui->binaryDataView->setDataSource(ds);
+        currentDS_ = new QBinaryDataSource(ui->binaryDataView);
+        currentDS_->attachTo(currentFile_);
+        ui->binaryDataView->setDataSource(currentDS_->createProxy());
 
         connect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
+        connect(ui->actionCommit_changes, SIGNAL(triggered()), this, SLOT(on_action_commitChanges_triggered()));
+        connect(ui->actionRevert_changes, SIGNAL(triggered()), this, SLOT(on_action_revertChanges_triggered()));
+
         ui->actionGoto_address->setEnabled(true);
+        ui->actionCommit_changes->setEnabled(true);
+        ui->actionRevert_changes->setEnabled(true);
 
         settings.setValue("MainWindow/lastFile", fileName);
         setWindowTitle(QString("%1 <%2>").arg(APP_NAME).arg(QFileInfo(fileName).fileName()));
+
     }
 }
 

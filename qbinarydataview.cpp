@@ -18,14 +18,14 @@ QBinaryDataView::~QBinaryDataView(void)
 {
 }
 
-void QBinaryDataView::setDataSource(QBinaryDataSource *newDataSource)
+void QBinaryDataView::setDataSource(QAbstractBinaryDataSource *newDataSource)
 {
     Q_ASSERT(viewport_);
     viewport_->setDataSource(newDataSource);
     viewport_->initScrollArea(this);
 }
 
-QBinaryDataSource *QBinaryDataView::dataSource() const
+QAbstractBinaryDataSource *QBinaryDataView::dataSource() const
 {
     Q_ASSERT(viewport_);
     return viewport_->dataSource();

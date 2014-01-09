@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QFile>
+
+#include "qbinarydatasource.h"
 
 namespace Ui {
     class MainWindow;
@@ -23,6 +26,8 @@ protected:
 
 public slots:
     void on_action_gotoAddress_triggered();
+    void on_action_commitChanges_triggered();
+    void on_action_revertChanges_triggered();
     void on_action_Open_triggered();
     void on_action_Quit_triggered();
 
@@ -30,6 +35,10 @@ signals:
 
 private:
     Ui::MainWindow *ui;
+
+    QFile *currentFile_;
+    QBinaryDataSource *currentDS_;
+
 };
 
 #endif // MAINWINDOW_H

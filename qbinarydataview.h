@@ -11,8 +11,8 @@ public:
     explicit QBinaryDataView(QWidget *parent = 0);
     virtual ~QBinaryDataView(void);
 
-    void setDataSource(QBinaryDataSource *newDataSource);
-    QBinaryDataSource *dataSource() const;
+    void setDataSource(QAbstractBinaryDataSource *newDataSource);
+    QAbstractBinaryDataSource *dataSource() const;
 
     void resizeEvent(QResizeEvent * event);
     void paintEvent(QPaintEvent * event);

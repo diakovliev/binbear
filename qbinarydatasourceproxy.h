@@ -1,11 +1,11 @@
 #ifndef QBINARYDATASOURCEPROXY_H
 #define QBINARYDATASOURCEPROXY_H
 
-#include <QAbstractItemModel>
+#include "qabstractbinarydatasource.h"
 
 class QBinaryDataSource;
 
-class QBinaryDataSourceProxy : public QAbstractItemModel
+class QBinaryDataSourceProxy : public QAbstractBinaryDataSource
 {
     Q_OBJECT
 public:
@@ -22,6 +22,20 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
     bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
     
+    /* Data navigation */
+    QModelIndex nextIndex(const QModelIndex &index) const;
+    QModelIndex prevIndex(const QModelIndex &index) const;
+
+    QModelIndex offsetToIndex(quint64 offset) const;
+    quint64 indexToOffset(QModelIndex index) const;
+
+    /* Do we have any changes */
+    bool doWeHaveChangesToCommit();
+
+    /* Commit/Revert changes */
+    bool commitChanges();
+    bool revertChanges();
+
 signals:
     
 public slots:

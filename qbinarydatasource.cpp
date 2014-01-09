@@ -8,7 +8,7 @@
 
 /******************************************************************************/
 QBinaryDataSource::QBinaryDataSource(QObject *parent)
-    : QAbstractItemModel(parent)
+    : QAbstractBinaryDataSource(parent)
     , ioDevice_(0)
     , viewWidth_(20)
 {

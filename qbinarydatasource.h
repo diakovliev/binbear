@@ -1,16 +1,12 @@
 #ifndef QBINARYDATASOURCE_H
 #define QBINARYDATASOURCE_H
 
-#include <QObject>
-#include <QAbstractItemModel>
-#include <QIODevice>
-#include <QWeakPointer>
-#include <QSharedPointer>
+#include "qabstractbinarydatasource.h"
 
 class QBinaryDataInterpretation;
 class QBinaryDataSourceProxy;
 
-class QBinaryDataSource : public QAbstractItemModel
+class QBinaryDataSource : public QAbstractBinaryDataSource
 {
     Q_OBJECT
 public:

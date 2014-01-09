@@ -32,8 +32,8 @@ public:
     explicit QBinaryDataViewViewport(QWidget *parent = 0);
     virtual ~QBinaryDataViewViewport(void);
 
-    void setDataSource(QBinaryDataSource *newDataSource);
-    QBinaryDataSource *dataSource() const;
+    void setDataSource(QAbstractBinaryDataSource *newDataSource);
+    QAbstractBinaryDataSource *dataSource() const;
 
     void setGroupSize(quint8 newGroupSize);
     int groupSize() const;
@@ -117,7 +117,7 @@ private:
         void reset();
     };
 
-    QBinaryDataSource*      dataSource_;
+    QAbstractBinaryDataSource* dataSource_;
     QAbstractScrollArea*    scrollArea_;
     quint8                  groupSize_;
 

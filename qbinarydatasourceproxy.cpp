@@ -1,8 +1,12 @@
+#include <QApplication>
+#include <QStyle>
+#include <QPalette>
+
 #include "qbinarydatasourceproxy.h"
 #include "qbinarydatasource.h"
 
 QBinaryDataSourceProxy::QBinaryDataSourceProxy(QBinaryDataSource *source)
-    : QAbstractItemModel(source)
+    : QAbstractBinaryDataSource(source)
     , source_(source)
     , cashedData_()
 {
@@ -53,6 +57,11 @@ QVariant QBinaryDataSourceProxy::data(const QModelIndex &index, int role) const
         if (role == Qt::BackgroundRole)
         {
             // Change background for changed values
+            QStyle *currentStyle = QApplication::style();
+            QPalette currentPalette = currentStyle->standardPalette();
+
+            QColor result = currentPalette.color(QPalette::Window);
+            return result;
 
         }
         else
@@ -79,4 +88,62 @@ bool QBinaryDataSourceProxy::setData(const QModelIndex & index, const QVariant &
         cashedData_.insert(index, value);
         return true;
     }
+}
+
+/* Data navigation */
+QModelIndex QBinaryDataSourceProxy::nextIndex(const QModelIndex &index) const
+{
+    Q_ASSERT(source_ != 0);
+    return source_->nextIndex(index);
+}
+
+QModelIndex QBinaryDataSourceProxy::prevIndex(const QModelIndex &index) const
+{
+    Q_ASSERT(source_ != 0);
+    return source_->prevIndex(index);
+}
+
+QModelIndex QBinaryDataSourceProxy::offsetToIndex(quint64 offset) const
+{
+    Q_ASSERT(source_ != 0);
+    return source_->offsetToIndex(offset);
+}
+
+quint64 QBinaryDataSourceProxy::indexToOffset(QModelIndex index) const
+{
+    Q_ASSERT(source_ != 0);
+    return source_->indexToOffset(index);
+}
+
+/* Do we have any changes */
+bool QBinaryDataSourceProxy::doWeHaveChangesToCommit()
+{
+    Q_ASSERT(source_ != 0);
+    return !cashedData_.isEmpty();
+}
+
+/* Commit/Revert changes */
+bool QBinaryDataSourceProxy::commitChanges()
+{
+    Q_ASSERT(source_ != 0);
+
+    QList<QModelIndex> indexes = cashedData_.keys();
+    foreach (QModelIndex index, indexes)
+    {
+        source_->setData(index, cashedData_.value(index), Qt::EditRole);
+    }
+
+    cashedData_.clear();
+    reset();
+
+    return true;
+}
+
+bool QBinaryDataSourceProxy::revertChanges()
+{
+    Q_ASSERT(source_ != 0);
+    cashedData_.clear();
+    reset();
+
+    return true;
 }

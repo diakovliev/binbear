@@ -65,6 +65,9 @@
      <string>&amp;Edit</string>
     </property>
     <addaction name="actionGoto_address"/>
+    <addaction name="separator"/>
+    <addaction name="actionCommit_changes"/>
+    <addaction name="actionRevert_changes"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -119,6 +122,22 @@
    </property>
    <property name="softKeyRole">
     <enum>QAction::NoSoftKey</enum>
+   </property>
+  </action>
+  <action name="actionCommit_changes">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Commit changes</string>
+   </property>
+  </action>
+  <action name="actionRevert_changes">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Revert changes</string>
    </property>
   </action>
  </widget>
