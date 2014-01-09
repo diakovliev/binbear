@@ -10,10 +10,6 @@ class QAbstractBinaryDataSource : public QAbstractItemModel
 public:
     explicit QAbstractBinaryDataSource(QObject *parent = 0);
     
-    /* IO source */
-//    virtual void attachTo(QIODevice *input) = 0;
-//    virtual QIODevice *detachFrom(void) = 0;
-
     /* Data navigation */
     virtual QModelIndex nextIndex(const QModelIndex &index) const = 0;
     virtual QModelIndex prevIndex(const QModelIndex &index) const = 0;
