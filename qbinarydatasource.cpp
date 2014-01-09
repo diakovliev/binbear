@@ -114,6 +114,24 @@ QModelIndex QBinaryDataSource::offsetToIndex(quint64 offset) const
 }
 
 /******************************************************************************/
+quint64 QBinaryDataSource::indexToOffset(QModelIndex index) const
+{
+    if (!index.isValid())
+        return 0;
+
+    if (index.row() * viewWidth_ + index.column() - 1  < 0)
+        return 0;
+
+    quint64 pos = index.row() * viewWidth_ + index.column();
+
+    quint64 size = ioDevice_->size();
+    if ( size - 1 < pos )
+        return 0;
+
+    return pos;
+}
+
+/******************************************************************************/
 int QBinaryDataSource::rowCount(const QModelIndex & parent) const
 {
     Q_UNUSED(parent);

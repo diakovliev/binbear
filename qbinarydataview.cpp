@@ -85,3 +85,12 @@ void QBinaryDataView::keyPressEvent(QKeyEvent * event)
         QAbstractScrollArea::keyPressEvent(event);
     }
 }
+
+void QBinaryDataView::gotoAddress(quint64 pos)
+{
+    QModelIndex index = viewport_->dataSource()->offsetToIndex(pos);
+    if (index.isValid())
+    {
+        viewport_->moveCursorToIndex(index);
+    }
+}

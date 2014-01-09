@@ -43,6 +43,7 @@ public:
     QModelIndex prevIndex(const QModelIndex &index) const;
 
     QModelIndex offsetToIndex(quint64 offset) const;
+    quint64 indexToOffset(QModelIndex index) const;
 
 signals:
 

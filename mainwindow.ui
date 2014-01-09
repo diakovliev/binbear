@@ -31,6 +31,7 @@
         <bold>true</bold>
        </font>
       </property>
+      <zorder>toolButton</zorder>
      </widget>
     </item>
    </layout>
@@ -60,7 +61,14 @@
     <addaction name="action_About"/>
     <addaction name="actionAbout_Qt"/>
    </widget>
+   <widget class="QMenu" name="menu_Edit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="actionGoto_address"/>
+   </widget>
    <addaction name="menu_File"/>
+   <addaction name="menu_Edit"/>
    <addaction name="menu_Help"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -95,6 +103,20 @@
   <action name="action_Quit">
    <property name="text">
     <string>&amp;Quit</string>
+   </property>
+  </action>
+  <action name="actionGoto_address">
+   <property name="text">
+    <string>Goto a&amp;ddress...</string>
+   </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::ApplicationShortcut</enum>
+   </property>
+   <property name="softKeyRole">
+    <enum>QAction::NoSoftKey</enum>
    </property>
   </action>
  </widget>

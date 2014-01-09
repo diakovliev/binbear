@@ -27,7 +27,7 @@ class QBinaryDataViewViewport : public QWidget
 public:
 
     enum {CURSOR_TIMEOUT = 500 };
-
+    enum {NOT_PRINTABLE_ITEM = '.' };
 
     explicit QBinaryDataViewViewport(QWidget *parent = 0);
     virtual ~QBinaryDataViewViewport(void);
@@ -67,6 +67,8 @@ public slots:
     void setLeftColumn(int leftColumn);
     void cursorBlinkingTrigger();
 
+    void moveCursorToIndex(const QModelIndex& index);
+
 protected:
     QList<ViewportItemData> getDataToRender(int rowsPerScreen);
 
@@ -89,7 +91,6 @@ protected:
 
     bool isVisibleIndex(const QModelIndex& index) const;
     void scrollToIndex(const QModelIndex& index);
-    void moveCursorToIndex(const QModelIndex& index);
 
 private:
 

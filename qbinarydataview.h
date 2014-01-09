@@ -21,11 +21,12 @@ public:
     void mouseReleaseEvent(QMouseEvent * event);
     void focusInEvent(QFocusEvent * event);
     void focusOutEvent(QFocusEvent * event);
-    void keyPressEvent(QKeyEvent * e);
+    void keyPressEvent(QKeyEvent * event);
 
 signals:
 
 public slots:
+    void gotoAddress(quint64 pos);
 
 private:
     QBinaryDataViewViewport *viewport_;

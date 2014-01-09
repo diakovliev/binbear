@@ -16,6 +16,11 @@ public:
 protected:
     void changeEvent(QEvent *e);
 
+public slots:
+    void on_action_gotoAddress_triggered();
+
+signals:
+
 private:
     Ui::MainWindow *ui;
 };

@@ -10,7 +10,7 @@
 #include <QTimer>
 #include <QStyleOptionFocusRect>
 
-#define DEBUG_GEOMETRY 0
+#define DEBUG_GEOMETRY 1
 //#define TRACE
 
 #ifdef TRACE
@@ -211,7 +211,7 @@ void QBinaryDataViewViewport::setupScrollBars()
         scrollArea_->verticalScrollBar()->setRange(0,0);
     }
 
-    if (totalColumnCount_ > 0 && columnsPerPage_ > 0 && totalColumnCount_ > columnsPerPage_)
+    if (totalColumnCount_ > 0 && columnsPerPage_ < totalColumnCount_ )
     {
         scrollArea_->horizontalScrollBar()->setRange(0, totalColumnCount_-columnsPerPage_);
         scrollArea_->horizontalScrollBar()->setPageStep(columnsPerPage_-1);
@@ -280,8 +280,6 @@ void QBinaryDataViewViewport::resizeEvent(QResizeEvent * event)
     setupScrollBarsNeeded_ = true;
 
     scrollToIndex(currentCursorPosition_);
-
-    update();
 
     TRACE_OUT;
 }
@@ -617,9 +615,6 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
     /* Raw view buffer */
     QString rawViewData;
 
-//    QModelIndex firstVisibleIndex;
-//    ViewportItemData firstVisibleData;
-
     // {{ CURSOR resetItemVisibility
     currentCursorItemData_[ItemVisible] = false;
     // }} CURSOR
@@ -630,10 +625,13 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
     int x,y;
     for (i = 0; i < rows; ++i) {
 
+        // Viewport yoffset for the first item in the line
         y = (i * cy_);
-        x = xmargin_ + painter.clipBoundingRect().left();
+        // Viewport xoffset for the first item in the line
+        x = painter.clipBoundingRect().left() + xmargin_;
 
-        for (j = 0; j < columnCount; ++j) {
+        for (j = 0; j < columnCount; ++j)
+        {
 
             if (j != leftColumn_ && !(j%groupSize_)) {
                 if (leftColumn_ <= j) {
@@ -643,7 +641,8 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
             /* item data offset */
             int offset = (i* columnCount) + j;            
-            if (offset < dataToRender.count()) {
+            if (offset < dataToRender.count())
+            {
                 ViewportItemData itemData = dataToRender.at(offset);
                 itemData[Offset] = offset;
 
@@ -659,24 +658,13 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
                     QRect itemRect = QRect(x,y,cx_,cy_);
                     QRegion intersectedRegion = painter.clipRegion().intersected(itemRect);
-                    if (!intersectedRegion.isEmpty() &&
+                    if ( !intersectedRegion.isEmpty() &&
                          QRegion(itemRect) == intersectedRegion)
                     {
                         ScopedPainter p(&painter);
                         paintItem(painter, itemRect, itemData);
 
                         itemData[ViewportRect] = itemRect;
-
-                        // {{ CURSOR ???
-//                        if ( !firstVisibleIndex.isValid() &&
-//                              (currentCursorPosition_.column() == itemData[ColumnIndex].toInt() ||
-//                               j > currentCursorPosition_.column()) )
-//                        {
-//                            firstVisibleIndex = dataSource_->index(itemData[RowIndex].toInt(),
-//                                                                   itemData[ColumnIndex].toInt());
-//                            firstVisibleData = itemData;
-//                        }
-                        // }} CURSOR
 
                         // {{ CURSOR setItemVisibility
                         if (currentCursorPosition_.isValid() &&
@@ -691,32 +679,21 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
                         // Cache rendered data
                         dataOnTheScreen_.append(itemData);
+
+                        // Viewport xoffset for the next item
+                        x += xmargin_ + cx_;
                     }
                     else
                     {
                         // Not visible column
-                        if (rightColumn == -1)
-                        {
-                            //qDebug() << "NOT VISIBLE COLUMN:" << j;
-                            rightColumn = j - 1;
-                        }
+                        rightColumn = rightColumn == -1 ? j : rightColumn;
                     }
                 }
 
                 /* collecting raw data */
                 QChar ch = itemData[RawData].toChar();
-                if (ch.isPrint()) {
-                    rawViewData.append(ch);
-                } else {
-                    rawViewData.append('.');
-                }
-
+                rawViewData.append(ch.isPrint()?ch:NOT_PRINTABLE_ITEM);
             }
-
-            if (leftColumn_ <= j) {
-                x += xmargin_ + cx_;
-            }
-
         }
 
         if (rawViewData.isEmpty()) break;
@@ -729,22 +706,15 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
     if (rightColumn == -1)
     {
-        rightColumn = columnCount-1;
+        // All columns visible
+        columnsPerPage_ = totalColumnCount_;
     }
-    //qDebug() << "VISIBLE AREA:" << leftColumn_ << rightColumn;
+    else
+    {
+        columnsPerPage_ = rightColumn - leftColumn_;
+    }
 
-    columnsPerPage_ = rightColumn - leftColumn_ + 1;
-
-    //qDebug() << "COLUMNS PER PAGE:" << columnsPerPage_;
-
-    // {{ CURSOR setupCursor
-//    if (!currentCursorItemData_[ItemVisible].toBool())
-//    {
-//        currentCursorPosition_              = firstVisibleIndex;
-//        currentCursorItemData_              = firstVisibleData;
-//        currentCursorItemData_[ItemVisible] = true;
-//    }
-    // }} CURSOR
+    qDebug() << "leftColumn_:" << leftColumn_ << "columnsPerPage_:" << columnsPerPage_ << "totalColumnCount_:" << totalColumnCount_;
 
     TRACE_OUT;
 }
@@ -781,7 +751,7 @@ void QBinaryDataViewViewport::paintCursor(QPainter &painter)
 
 void QBinaryDataViewViewport::paintEvent(QPaintEvent * event)
 {
-    TRACE_IN;
+    TRACE_IN;    
 
     QPainter painter(this);
 
@@ -833,26 +803,28 @@ void QBinaryDataViewViewport::paintEvent(QPaintEvent * event)
 
     } while(viewportRegion.isEmpty());
 
-    {
+    if (!event->region().intersected(viewportRegion).isEmpty()) {
         ScopedPainter p(&painter);
         painter.setClipRegion(viewportRegion);
         paintViewport(painter, addresses, presentations);
     }
 
-    if (currentCursorItemData_[ItemVisible].toBool() &&
-            (cursorVisibility_ || !currentCursorInputBuffer_.isEmpty() || !hasFocus()) )
+    if ( currentCursorItemData_[ItemVisible].toBool() &&
+         (cursorVisibility_ || !currentCursorInputBuffer_.isEmpty() || !hasFocus()) )
     {
         ScopedPainter p(&painter);
         paintCursor(painter);
     }
 
-    if (addressBarVisible_ && addressBarAutoVisible)
+    if (addressBarVisible_ && addressBarAutoVisible &&
+            !event->region().intersected(addressBarRegion).isEmpty())
     {
         ScopedPainter p(&painter);
         painter.setClipRegion(addressBarRegion);
         paintAddressBar(painter, addresses);
     }
-    if (presentationBarVisible_ && presentationBarAutoVisible)
+    if (presentationBarVisible_ && presentationBarAutoVisible &&
+            !event->region().intersected(presentationBarRegion).isEmpty())
     {
         ScopedPainter p(&painter);
         painter.setClipRegion(presentationBarRegion);
@@ -1027,21 +999,13 @@ bool QBinaryDataViewViewport::isSupportedKeyEvent(QKeyEvent * event)
     {
         res = true;
     }
-    if (event->key() == Qt::Key_Left)
+    else
     {
-        res = true;
-    }
-    if (event->key() == Qt::Key_Right)
-    {
-        res = true;
-    }
-    if (event->key() == Qt::Key_Up)
-    {
-        res = true;
-    }
-    if (event->key() == Qt::Key_Down)
-    {
-        res = true;
+        res = event->key() == Qt::Key_Left  ||
+            event->key() == Qt::Key_Right   ||
+            event->key() == Qt::Key_Up      ||
+            event->key() == Qt::Key_Down    ||
+            event->key() == Qt::Key_Escape;
     }
 
     TRACE_OUT;
@@ -1111,6 +1075,17 @@ void QBinaryDataViewViewport::keyPressEvent (QKeyEvent * event)
         }
         else
         {
+            // Repaint
+            repaint();
+        }
+        // }} CURSOR
+    }
+    else if (event->key() == Qt::Key_Escape)
+    {
+        // {{ CURSOR clearInputBuffer
+        if (!currentCursorInputBuffer_.isEmpty())
+        {
+            currentCursorInputBuffer_.clear();
             // Repaint
             repaint();
         }

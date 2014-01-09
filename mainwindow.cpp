@@ -5,6 +5,7 @@
 #include "qbinarydatainterpretation.h"
 
 #include <QFile>
+#include <QInputDialog>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -26,11 +27,29 @@ MainWindow::MainWindow(QWidget *parent) :
     ds->setInterpretation(interptretation);
 
     ui->binaryDataView->setDataSource(ds);
+
+    //--------------------------------------------
+    connect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::on_action_gotoAddress_triggered()
+{
+    bool ok;
+    QString addressStr = QInputDialog::getText(this,
+                                               tr("Please enter address"),
+                                               tr("Address in HEX"),
+                                               QLineEdit::Normal,
+                                               QString(),
+                                               &ok);
+    if (ok && !addressStr.isEmpty())
+    {
+        ui->binaryDataView->gotoAddress(addressStr.toULongLong(0,16));
+    }
 }
 
 void MainWindow::changeEvent(QEvent *e)
