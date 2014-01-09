@@ -15,9 +15,12 @@ public:
 
 protected:
     void changeEvent(QEvent *e);
+    void closeCurrentFile();
+    void openFile(const QString &fileName);
 
 public slots:
     void on_action_gotoAddress_triggered();
+    void on_action_Open_triggered();
 
 signals:
 

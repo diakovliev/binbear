@@ -29,7 +29,13 @@ void QBinaryDataSource::attachTo(QIODevice *input)
 /******************************************************************************/
 QIODevice *QBinaryDataSource::detachFrom(void)
 {
-    return ioDevice_;
+    QIODevice *res = ioDevice_;
+
+    res = ioDevice_;
+
+    reset();
+
+    return res;
 }
 
 /******************************************************************************/
@@ -61,6 +67,13 @@ QModelIndex QBinaryDataSource::parent(const QModelIndex &index) const
 QModelIndex QBinaryDataSource::index(int row, int column, const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
+
+    //Q_ASSERT(ioDevice_ != 0);
+
+    if (!ioDevice_)
+    {
+        return QModelIndex();
+    }
 
     quint64 pos = row * viewWidth_ + column;
     quint64 size = ioDevice_->size();

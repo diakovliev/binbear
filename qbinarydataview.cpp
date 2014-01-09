@@ -88,6 +88,9 @@ void QBinaryDataView::keyPressEvent(QKeyEvent * event)
 
 void QBinaryDataView::gotoAddress(quint64 pos)
 {
+    if (!viewport_->dataSource())
+        return;
+
     QModelIndex index = viewport_->dataSource()->offsetToIndex(pos);
     if (index.isValid())
     {

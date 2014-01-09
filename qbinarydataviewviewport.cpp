@@ -10,7 +10,7 @@
 #include <QTimer>
 #include <QStyleOptionFocusRect>
 
-#define DEBUG_GEOMETRY 1
+#define DEBUG_GEOMETRY 0
 //#define TRACE
 
 #ifdef TRACE
@@ -96,9 +96,14 @@ void QBinaryDataViewViewport::setDataSource(QBinaryDataSource *newDataSource)
         totalRowCount_ = 0;
         totalColumnCount_ = 0;
         dataCache_.reset();
-        currentCursorPosition_ = dataSource_->index(0, 0);
         currentCursorItemData_.clear();
         currentCursorInputBuffer_.clear();
+
+        if (dataSource_)
+        {
+            currentCursorPosition_ = dataSource_->index(0, 0);
+        }
+
         update();
     }
 
@@ -152,7 +157,7 @@ void QBinaryDataViewViewport::setLeftColumn(int leftColumn)
 
     int newLeftColumn = leftColumn;
 
-    if (newLeftColumn + columnsPerPage_ > totalColumnCount_)
+    if (columnsPerPage_ >= totalColumnCount_)
     {
         newLeftColumn = totalColumnCount_ - columnsPerPage_;
     }
@@ -176,18 +181,19 @@ void QBinaryDataViewViewport::scrollToIndex(const QModelIndex& index)
 {
     TRACE_IN;
 
+    if (!dataSource_) return;
+
     while (topRow_ > index.row())
         --topRow_;
     while (topRow_ + linesPerPage_ < index.row() + 1)
         ++topRow_;
-
-    scrollArea_->verticalScrollBar()->setValue(topRow_);
 
     while (leftColumn_ > index.column())
         --leftColumn_;
     while (leftColumn_ + columnsPerPage_ < index.column() + 1)
         ++leftColumn_;
 
+    scrollArea_->verticalScrollBar()->setValue(topRow_);
     scrollArea_->horizontalScrollBar()->setValue(leftColumn_);
 
     update();
@@ -198,6 +204,8 @@ void QBinaryDataViewViewport::scrollToIndex(const QModelIndex& index)
 void QBinaryDataViewViewport::setupScrollBars()
 {
     TRACE_IN;
+
+    if (!dataSource_) return;
 
     if (totalRowCount_ > 0 && linesPerPage_ < totalRowCount_)
     {
@@ -239,7 +247,6 @@ void QBinaryDataViewViewport::initScrollArea(QAbstractScrollArea *scrollArea)
 
         connect(scrollArea_->verticalScrollBar(), SIGNAL(valueChanged(int)),
                 this, SLOT(setTopRow(int)));
-
         connect(scrollArea_->horizontalScrollBar(), SIGNAL(valueChanged(int)),
                 this, SLOT(setLeftColumn(int)));
     }
@@ -345,8 +352,8 @@ QList<ViewportItemData> QBinaryDataViewViewport::getDataToRender(int rowsPerScre
         int idx,startIdx;
         if (topRow_ < totalRowCount_)
         {
-            idx = topRow_;
-            startIdx = topRow_;
+            idx         = topRow_;
+            startIdx    = topRow_;
         } else
         {
             return dataToRender;
@@ -585,8 +592,6 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 
     painter.setBackground(currentPalette.base());
 
-    Q_ASSERT(scrollArea_);
-
     /* clear viewport */
     painter.fillRect(rect(), painter.background());
 
@@ -714,7 +719,7 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
         columnsPerPage_ = rightColumn - leftColumn_;
     }
 
-    qDebug() << "leftColumn_:" << leftColumn_ << "columnsPerPage_:" << columnsPerPage_ << "totalColumnCount_:" << totalColumnCount_;
+    //qDebug() << "leftColumn_:" << leftColumn_ << "columnsPerPage_:" << columnsPerPage_ << "totalColumnCount_:" << totalColumnCount_;
 
     TRACE_OUT;
 }

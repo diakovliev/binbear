@@ -31,7 +31,6 @@
         <bold>true</bold>
        </font>
       </property>
-      <zorder>toolButton</zorder>
      </widget>
     </item>
    </layout>
@@ -106,6 +105,9 @@
    </property>
   </action>
   <action name="actionGoto_address">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Goto a&amp;ddress...</string>
    </property>
