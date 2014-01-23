@@ -168,12 +168,6 @@ void MainWindow::openFile(const QString &fileName)
         currentDS_ = new QBinaryDataSource(ui->binaryDataView);
         currentDS_->attachTo(currentFile_);
 
-        /*
-        void Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);
-        void Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end);
-        void Cursor_selectionCanceled();
-          */
-
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_positionChanged(const QModelIndex &, const QModelIndex &))
                 , this, SLOT(on_viewport_Cursor_positionChanged(const QModelIndex &, const QModelIndex &)));
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionDone(const QModelIndex &, const QModelIndex &))

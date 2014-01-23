@@ -1040,8 +1040,10 @@ void QBinaryDataViewViewport::Cursor_paint(QPainter &painter)
 
     QRect itemRect = currentCursorItemData_[ViewportRect].toRect();
 
-    QBrush highlight = currentPalette.brush(QPalette::Highlight);
-    QColor highlightedText = currentPalette.color(QPalette::HighlightedText);
+    QBrush highlight        = currentPalette.brush(QPalette::Highlight);
+    QColor highlightedText  = currentPalette.color(QPalette::HighlightedText);
+
+    painter.setCompositionMode(QPainter::CompositionMode_HardLight);
 
     painter.setBackground(highlight);
     painter.setPen(highlightedText);
