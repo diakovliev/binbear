@@ -7,7 +7,8 @@
 #include <QPointer>
 #include <QScrollArea>
 
-#include "qbinarydatasource.h"
+#include "qabstractbinarydatasource.h"
+#include "qabstractbinarydatasourceselection.h"
 
 enum ViewportItemDataType {
     RowIndex = Qt::UserRole + 1,
@@ -19,6 +20,11 @@ enum ViewportItemDataType {
     ItemVisible = Qt::UserRole + 7
 };
 
+enum Cursor_Mode {
+    Normal,
+    Selection
+};
+
 typedef QMap<int, QVariant> ViewportItemData;
 
 class QBinaryDataViewViewport : public QWidget
@@ -26,8 +32,11 @@ class QBinaryDataViewViewport : public QWidget
     Q_OBJECT
 public:
 
-    enum {CURSOR_TIMEOUT = 500 };
-    enum {NOT_PRINTABLE_ITEM = '.' };
+    /* Some constants */
+    enum {
+        CURSOR_TIMEOUT = 500,
+        NOT_PRINTABLE_ITEM = '.'
+    };
 
     explicit QBinaryDataViewViewport(QWidget *parent = 0);
     virtual ~QBinaryDataViewViewport(void);
@@ -54,43 +63,53 @@ public:
     void mousePressEvent(QMouseEvent * event);
     void mouseReleaseEvent(QMouseEvent * event);
     void keyPressEvent(QKeyEvent * event);
-
-    QModelIndex cursorPosition(void) const;
+    void keyReleaseEvent(QKeyEvent * event);
 
 signals:
-    void cursorPositionChanged(const QModelIndex &prev, const QModelIndex &current);
+    void Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);
+    void Cursor_selectionStarted();
+    void Cursor_selectionChanged();
+    void Cursor_selectionStopped();
 
-public slots:
-    void setCursorPosition(const QModelIndex &position);
-
+public slots:    
     void setTopRow(int topRow);
     void setLeftColumn(int leftColumn);
-    void cursorBlinkingTrigger();
 
-    void moveCursorToIndex(const QModelIndex& index);
+    void Cursor_blinkingTrigger();
+    void Cursor_setPosition(const QModelIndex &position);
+    void Cursor_moveToIndex(const QModelIndex& index);
 
 protected:
     QList<ViewportItemData> getDataToRender(int rowsPerScreen);
 
-    void paintItem(QPainter &painter, const QRect &itemRect, const QMap<int,QVariant> &data);
+    void paintItem(QPainter &painter, const QRect &itemRect, const QMap<int,QVariant> &data, bool isSelected);
     void paintViewport(QPainter &painter, QStringList &addresses, QStringList &presentations);
     void paintAddressBar(QPainter &painter, const QStringList &addresses);
     void paintPresenationBar(QPainter &painter, const QStringList &presenations);
+
+    void setupScrollBars();
 
     bool updateGeometry(QPainter &painter);
     QRegion calculateAddressBarRegion(QPainter &painter);
     QRegion calculatePresentationBarRegion(QPainter &painter);
     QRegion calculateViewportRegion(QPainter &painter);
 
-    void startCursorBlinking();
-    void stopCursorBlinking();
-    void paintCursor(QPainter &painter);
-
-    void updateCursorPositionByMouseEvent(QMouseEvent * event);
-    void setupScrollBars();
-
     bool isVisibleIndex(const QModelIndex& index) const;
     void scrollToIndex(const QModelIndex& index);
+
+    // Cursor
+    void Cursor_initTimer();
+    void Cursor_startBlinking();
+    void Cursor_stopBlinking();
+    void Cursor_paint(QPainter &painter);
+    void Cursor_updatePositionByMouseEvent(QMouseEvent * event);
+    void Cursor_resetItemVisibility();
+    void Cursor_setItemVisibility(const ViewportItemData &itemData);
+    QModelIndex Cursor_addToInputBuffer(char inputData);
+    QModelIndex Cursor_clearInputBuffer();
+    QModelIndex Cursor_position(void) const;
+    void Cursor_keyPressEvent(QKeyEvent *event);
+    void Cursor_keyReleaseEvent(QKeyEvent *event);
 
 private:
 
@@ -117,8 +136,10 @@ private:
         void reset();
     };
 
-    QAbstractBinaryDataSource* dataSource_;
-    QAbstractScrollArea*    scrollArea_;
+    QAbstractBinaryDataSource           *dataSource_;
+    QAbstractBinaryDataSourceSelection  *selection_;
+    QAbstractScrollArea                 *scrollArea_;
+
     quint8                  groupSize_;
 
     int                     linesPerPage_;
@@ -144,9 +165,16 @@ private:
     QPointer<QTimer>        cursorPaintTimer_;
     bool                    cursorVisibility_;
 
+    QModelIndex             savedCursorPosition_;
     QModelIndex             currentCursorPosition_;
     ViewportItemData        currentCursorItemData_;
     QByteArray              currentCursorInputBuffer_;
+    Cursor_Mode             currentCursorMode_;
+    struct {
+        QModelIndex pos1;
+        QModelIndex pos2;
+    }                       currentSelection_;
+
 };
 
 #endif // QBINARYDATAVIEWVIEWPORT_H

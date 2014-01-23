@@ -1,4 +1,5 @@
 #include "qbinarydataviewviewport.h"
+#include "qbinarydatasourceselection_range.h"
 
 #include <QPaintEvent>
 #include <QPainter>
@@ -45,6 +46,7 @@ public:
 QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
     : QWidget(parent)
     , dataSource_(0)
+    , selection_(0)
     , scrollArea_(0)
     , groupSize_(4)
     , linesPerPage_(1)
@@ -64,17 +66,16 @@ QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
     , dataOnTheScreen_()
     , cursorPaintTimer_(NULL)
     , cursorVisibility_(true)
-    , currentCursorPosition_(QModelIndex())
+    , savedCursorPosition_()
+    , currentCursorPosition_()
     , currentCursorItemData_()
     , currentCursorInputBuffer_()
+    , currentCursorMode_(Normal)
+    , currentSelection_()
 {
     TRACE_IN;
 
-    cursorPaintTimer_ = new QTimer(this);
-    cursorPaintTimer_->setInterval(CURSOR_TIMEOUT);
-    cursorPaintTimer_->setSingleShot(false);
-
-    connect(cursorPaintTimer_, SIGNAL(timeout()), this, SLOT(cursorBlinkingTrigger()));
+    Cursor_initTimer();
 
     TRACE_OUT;
 }
@@ -101,6 +102,7 @@ void QBinaryDataViewViewport::setDataSource(QAbstractBinaryDataSource *newDataSo
         cursorVisibility_ = true;
         currentCursorItemData_.clear();
         currentCursorInputBuffer_.clear();
+        savedCursorPosition_ = QModelIndex();
         if (dataSource_)
         {
             currentCursorPosition_ = dataSource_->index(0, 0);
@@ -109,6 +111,8 @@ void QBinaryDataViewViewport::setDataSource(QAbstractBinaryDataSource *newDataSo
         {
             currentCursorPosition_ = QModelIndex();
         }
+        currentSelection_.pos1 = QModelIndex();
+        currentSelection_.pos2 = QModelIndex();
 
         update();
     }
@@ -126,7 +130,7 @@ QAbstractBinaryDataSource *QBinaryDataViewViewport::dataSource() const
 void QBinaryDataViewViewport::setGroupSize(quint8 newGroupSize)
 {
     TRACE_IN;
-    if (newGroupSize != groupSize_) {
+    if (newGroupSize != groupSize_) {        
         groupSize_ = newGroupSize;
         update();
     }
@@ -416,10 +420,15 @@ QList<ViewportItemData> QBinaryDataViewViewport::getDataToRender(int rowsPerScre
 
   */
 
-
-void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect, const ViewportItemData &itemData)
+void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect, const ViewportItemData &itemData, bool isSelected)
 {
     TRACE_IN;
+
+    QStyle *currentStyle = style();
+    QPalette currentPalette = currentStyle->standardPalette();
+
+    QBrush highlight = currentPalette.brush(QPalette::Highlight);
+    QColor highlightedText = currentPalette.color(QPalette::HighlightedText);
 
 #if DEBUG_GEOMETRY >= 1
     painter.drawRect(itemRect);
@@ -432,6 +441,26 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
     QModelIndex index = dataSource_->index(itemData[RowIndex].toInt(), itemData[ColumnIndex].toInt());
     if (index.isValid())
     {
+        if (index != currentCursorPosition_)
+        {
+            if (currentCursorMode_ == Selection)
+            {
+                if (dataSource_->indexInRange(index, savedCursorPosition_, currentCursorPosition_))
+                {
+                    painter.setBackground(highlight);
+                    painter.setPen(highlightedText);
+                }
+            }
+            else
+            {
+                if (dataSource_->indexInRange(index, currentSelection_.pos1, currentSelection_.pos2))
+                {
+                    painter.setBackground(highlight);
+                    painter.setPen(highlightedText);
+                }
+            }
+        }
+
         QVariant bg = dataSource_->data(index, Qt::BackgroundRole);
         if (!bg.isNull())
         {
@@ -639,9 +668,7 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
     /* Raw view buffer */
     QString rawViewData;
 
-    // {{ CURSOR resetItemVisibility
-    currentCursorItemData_[ItemVisible] = false;
-    // }} CURSOR
+    Cursor_resetItemVisibility();
 
     int rightColumn = -1;
 
@@ -686,20 +713,11 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
                          QRegion(itemRect) == intersectedRegion)
                     {
                         ScopedPainter p(&painter);
-                        paintItem(painter, itemRect, itemData);
+                        paintItem(painter, itemRect, itemData, false);
 
                         itemData[ViewportRect] = itemRect;
 
-                        // {{ CURSOR setItemVisibility
-                        if (currentCursorPosition_.isValid() &&
-                            itemData[RowIndex] == currentCursorPosition_.row() &&
-                            itemData[ColumnIndex] == currentCursorPosition_.column()
-                            )
-                        {
-                            currentCursorItemData_              = itemData;
-                            currentCursorItemData_[ItemVisible] = true;
-                        }
-                        // }} CURSOR
+                        Cursor_setItemVisibility(itemData);
 
                         // Cache rendered data
                         dataOnTheScreen_.append(itemData);
@@ -742,35 +760,6 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
     TRACE_OUT;
 }
 
-void QBinaryDataViewViewport::paintCursor(QPainter &painter)
-{
-    TRACE_IN;
-
-    if (!currentCursorInputBuffer_.isEmpty())
-    {
-        QString presentation = QString::fromAscii(currentCursorInputBuffer_);
-        if (presentation.length() == 1)
-            presentation.append("_");
-        currentCursorItemData_[Qt::DisplayRole] = presentation;
-    }
-
-    // {{ CURSOR paint
-    QStyle *currentStyle = style();
-    QPalette currentPalette = currentStyle->standardPalette();
-
-    QRect itemRect = currentCursorItemData_[ViewportRect].toRect();
-
-    QBrush highlight = currentPalette.brush(QPalette::Highlight);
-    QColor highlightedText = currentPalette.color(QPalette::HighlightedText);
-
-    painter.setBackground(highlight);
-    painter.setPen(highlightedText);
-
-    paintItem(painter, itemRect, currentCursorItemData_);
-    // }} CURSOR
-
-    TRACE_OUT;
-}
 
 void QBinaryDataViewViewport::paintEvent(QPaintEvent * event)
 {
@@ -836,7 +825,7 @@ void QBinaryDataViewViewport::paintEvent(QPaintEvent * event)
          (cursorVisibility_ || !currentCursorInputBuffer_.isEmpty() || !hasFocus()) )
     {
         ScopedPainter p(&painter);
-        paintCursor(painter);
+        Cursor_paint(painter);
     }
 
     if (addressBarVisible_ && addressBarAutoVisible &&
@@ -866,54 +855,13 @@ void QBinaryDataViewViewport::paintEvent(QPaintEvent * event)
     TRACE_OUT;
 }
 
-void QBinaryDataViewViewport::cursorBlinkingTrigger()
-{
-    TRACE_IN;
-
-    repaint();
-
-    if (hasFocus())
-    {
-        // {{ CURSOR invertVisibility
-        cursorVisibility_ = !cursorVisibility_;
-        // }} CURSOR
-    }
-
-    TRACE_OUT;
-}
-
-void QBinaryDataViewViewport::startCursorBlinking()
-{
-    TRACE_IN;
-
-    if (hasFocus())
-    {
-        cursorPaintTimer_->start();
-    }
-
-    TRACE_OUT;
-}
-
-void QBinaryDataViewViewport::stopCursorBlinking()
-{
-    TRACE_IN;
-
-    // {{ CURSOR setVisibility
-    cursorVisibility_ = true;
-    // }} CURSOR
-
-    cursorPaintTimer_->stop();
-
-    TRACE_OUT;
-}
-
 void QBinaryDataViewViewport::focusInEvent(QFocusEvent * event)
 {
     TRACE_IN;
 
     Q_UNUSED(event);
 
-    startCursorBlinking();
+    Cursor_startBlinking();
 
     event->accept();
 
@@ -926,7 +874,7 @@ void QBinaryDataViewViewport::focusOutEvent(QFocusEvent * event)
 
     Q_UNUSED(event);
 
-    stopCursorBlinking();
+    Cursor_stopBlinking();
 
     event->accept();
 
@@ -955,7 +903,214 @@ void QBinaryDataViewViewport::mouseMoveEvent( QMouseEvent * event)
     TRACE_OUT;
 }
 
-void QBinaryDataViewViewport::updateCursorPositionByMouseEvent(QMouseEvent * event)
+void QBinaryDataViewViewport::mousePressEvent(QMouseEvent * event)
+{
+    TRACE_IN;
+
+    //qDebug("MOUSE PRESS   x: %d y: %d", event->pos().x(), event->pos().y());
+
+    Cursor_updatePositionByMouseEvent(event);
+
+    event->accept();
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::mouseReleaseEvent(QMouseEvent * event)
+{
+    TRACE_IN;
+
+    //qDebug("MOUSE RELEASE   x: %d y: %d", event->pos().x(), event->pos().y());
+
+    //updateCursorPositionByMouseEvent(event);
+
+    event->accept();
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::keyPressEvent (QKeyEvent * event)
+{
+    TRACE_IN;
+
+    Cursor_keyPressEvent(event);
+
+    event->accept();
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::keyReleaseEvent (QKeyEvent * event)
+{
+    TRACE_IN;
+
+    Cursor_keyReleaseEvent(event);
+
+    event->accept();
+
+    TRACE_OUT;
+}
+
+bool QBinaryDataViewViewport::isSupportedKeyEvent(QKeyEvent * event)
+{
+    TRACE_IN;
+
+    bool res = false;
+
+    if (!event->text().isEmpty() && QString("0123456789abcdefABCDEF").indexOf(event->text()) >= 0)
+    {
+        res = true;
+    }
+    else
+    {
+        res = event->key() == Qt::Key_Left  ||
+            event->key() == Qt::Key_Right   ||
+            event->key() == Qt::Key_Up      ||
+            event->key() == Qt::Key_Down    ||
+            event->key() == Qt::Key_Escape  ||
+            event->key() == Qt::Key_Shift    ;
+    }
+
+    TRACE_OUT;
+
+    return res;
+}
+
+bool QBinaryDataViewViewport::isVisibleIndex(const QModelIndex& index) const
+{
+    TRACE_IN;
+
+    bool res = false;
+
+    QList<ViewportItemData>::const_iterator iter = dataOnTheScreen_.constBegin();
+    while (iter != dataOnTheScreen_.constEnd() && !res) {
+        res =   (*iter)[RowIndex].toInt() == index.row() &&
+                (*iter)[ColumnIndex].toInt() == index.column();
+        ++iter;
+    }
+
+    TRACE_OUT;
+
+    return res;
+}
+
+void QBinaryDataViewViewport::Cursor_initTimer()
+{
+    cursorPaintTimer_ = new QTimer(this);
+    cursorPaintTimer_->setInterval(CURSOR_TIMEOUT);
+    cursorPaintTimer_->setSingleShot(false);
+
+    connect(cursorPaintTimer_, SIGNAL(timeout()), this, SLOT(Cursor_blinkingTrigger()));
+}
+
+void QBinaryDataViewViewport::Cursor_resetItemVisibility()
+{
+    currentCursorItemData_[ItemVisible] = false;
+}
+
+void QBinaryDataViewViewport::Cursor_setItemVisibility(const ViewportItemData &itemData)
+{
+    if (currentCursorPosition_.isValid() &&
+        itemData[RowIndex] == currentCursorPosition_.row() &&
+        itemData[ColumnIndex] == currentCursorPosition_.column()
+        )
+    {
+        currentCursorItemData_              = itemData;
+        currentCursorItemData_[ItemVisible] = true;
+    }
+}
+
+void QBinaryDataViewViewport::Cursor_paint(QPainter &painter)
+{
+    TRACE_IN;
+
+    if (!currentCursorInputBuffer_.isEmpty())
+    {
+        QString presentation = QString::fromAscii(currentCursorInputBuffer_);
+        if (presentation.length() == 1)
+            presentation.append("_");
+        currentCursorItemData_[Qt::DisplayRole] = presentation;
+    }
+
+    // {{ CURSOR paint
+    QStyle *currentStyle = style();
+    QPalette currentPalette = currentStyle->standardPalette();
+
+    QRect itemRect = currentCursorItemData_[ViewportRect].toRect();
+
+    QBrush highlight = currentPalette.brush(QPalette::Highlight);
+    QColor highlightedText = currentPalette.color(QPalette::HighlightedText);
+
+    painter.setBackground(highlight);
+    painter.setPen(highlightedText);
+
+    paintItem(painter, itemRect, currentCursorItemData_, false);
+    // }} CURSOR
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::Cursor_moveToIndex(const QModelIndex& index)
+{
+    QModelIndex prev = currentCursorPosition_;
+
+    currentCursorItemData_.clear();
+    currentCursorPosition_ = index;
+
+    if (!isVisibleIndex(currentCursorPosition_))
+    {
+        scrollToIndex(currentCursorPosition_);
+    }
+
+    emit Cursor_positionChanged(prev, currentCursorPosition_);
+
+    // Force show cursor
+    cursorVisibility_ = true;
+    repaint();
+}
+
+void QBinaryDataViewViewport::Cursor_blinkingTrigger()
+{
+    TRACE_IN;
+
+    repaint();
+
+    if (hasFocus())
+    {
+        // {{ CURSOR invertVisibility
+        cursorVisibility_ = !cursorVisibility_;
+        // }} CURSOR
+    }
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::Cursor_startBlinking()
+{
+    TRACE_IN;
+
+    if (hasFocus())
+    {
+        cursorPaintTimer_->start();
+    }
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::Cursor_stopBlinking()
+{
+    TRACE_IN;
+
+    // {{ CURSOR setVisibility
+    cursorVisibility_ = true;
+    // }} CURSOR
+
+    cursorPaintTimer_->stop();
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::Cursor_updatePositionByMouseEvent(QMouseEvent * event)
 {
     TRACE_IN;
 
@@ -985,163 +1140,119 @@ void QBinaryDataViewViewport::updateCursorPositionByMouseEvent(QMouseEvent * eve
     TRACE_OUT;
 }
 
-void QBinaryDataViewViewport::mousePressEvent(QMouseEvent * event)
+QModelIndex QBinaryDataViewViewport::Cursor_addToInputBuffer(char inputData)
 {
-    TRACE_IN;
+    QModelIndex newIndex;
 
-    //qDebug("MOUSE PRESS   x: %d y: %d", event->pos().x(), event->pos().y());
-
-    updateCursorPositionByMouseEvent(event);
-
-    event->accept();
-
-    TRACE_OUT;
-}
-
-void QBinaryDataViewViewport::mouseReleaseEvent(QMouseEvent * event)
-{
-    TRACE_IN;
-
-    //qDebug("MOUSE RELEASE   x: %d y: %d", event->pos().x(), event->pos().y());
-
-    //updateCursorPositionByMouseEvent(event);
-
-    event->accept();
-
-    TRACE_OUT;
-}
-
-bool QBinaryDataViewViewport::isSupportedKeyEvent(QKeyEvent * event)
-{
-    TRACE_IN;
-
-    bool res = false;
-
-    const QString pattern = "0123456789abcdefABCDEF";
-    if (!event->text().isEmpty() && pattern.indexOf(event->text()) >= 0)
+    currentCursorInputBuffer_.append(inputData);
+    if (currentCursorInputBuffer_.size() >= 2)
     {
-        res = true;
+        QString presentation = QString::fromAscii(currentCursorInputBuffer_);
+        //qDebug() << "INPUT  presentation: '" << presentation << "'";
+        dataSource_->setData(currentCursorPosition_, presentation);
+        currentCursorInputBuffer_.clear();
+
+        // Goto next position
+        newIndex = dataSource_->nextIndex(currentCursorPosition_);
     }
     else
     {
-        res = event->key() == Qt::Key_Left  ||
-            event->key() == Qt::Key_Right   ||
-            event->key() == Qt::Key_Up      ||
-            event->key() == Qt::Key_Down    ||
-            event->key() == Qt::Key_Escape;
+        // Repaint
+        repaint();
     }
 
-    TRACE_OUT;
-
-    return res;
+    return newIndex;
 }
 
-bool QBinaryDataViewViewport::isVisibleIndex(const QModelIndex& index) const
+QModelIndex QBinaryDataViewViewport::Cursor_clearInputBuffer()
 {
-    TRACE_IN;
-
-    bool res = false;
-
-    QList<ViewportItemData>::const_iterator iter = dataOnTheScreen_.constBegin();
-    while (iter != dataOnTheScreen_.constEnd() && !res) {
-        res =   (*iter)[RowIndex].toInt() == index.row() &&
-                (*iter)[ColumnIndex].toInt() == index.column();
-        ++iter;
-    }
-
-    TRACE_OUT;
-
-    return res;
-}
-
-void QBinaryDataViewViewport::moveCursorToIndex(const QModelIndex& index)
-{
-    QModelIndex prev = currentCursorPosition_;
-
-    currentCursorItemData_.clear();
-    currentCursorPosition_ = index;
-
-    if (!isVisibleIndex(currentCursorPosition_))
+    if (!currentCursorInputBuffer_.isEmpty())
     {
-        scrollToIndex(currentCursorPosition_);
+        currentCursorInputBuffer_.clear();
+        // Repaint
+        repaint();
     }
 
-    emit cursorPositionChanged(prev, currentCursorPosition_);
-
-    // Force show cursor
-    cursorVisibility_ = true;
-    repaint();
+    return QModelIndex();
 }
 
-void QBinaryDataViewViewport::keyPressEvent (QKeyEvent * event)
+void QBinaryDataViewViewport::Cursor_keyReleaseEvent(QKeyEvent *event)
 {
-    TRACE_IN;
-
-    QModelIndex newIndex;
-
-    const QString pattern = "0123456789abcdefABCDEF";
-    if (!event->text().isEmpty() && pattern.indexOf(event->text()) >= 0)
+    switch (event->key())
     {
-        //qDebug() << "INPUT  c: '" << event->text() << "'";
-
-        // {{ CURSOR addToInputBuffer
-        currentCursorInputBuffer_.append(event->text().toUpper().at(0).toAscii());
-        if (currentCursorInputBuffer_.size() >= 2)
+    case Qt::Key_Shift:
+        if (dataSource_->indexToOffset(savedCursorPosition_)
+                <= dataSource_->indexToOffset(currentCursorPosition_))
         {
-            QString presentation = QString::fromAscii(currentCursorInputBuffer_);
-            //qDebug() << "INPUT  presentation: '" << presentation << "'";
-            dataSource_->setData(currentCursorPosition_, presentation);
-            currentCursorInputBuffer_.clear();
-
-            // Goto next position
-            newIndex = dataSource_->nextIndex(currentCursorPosition_);
+            currentSelection_.pos1  = savedCursorPosition_;
+            currentSelection_.pos2  = currentCursorPosition_;
         }
         else
         {
-            // Repaint
-            repaint();
+            currentSelection_.pos1  = currentCursorPosition_;
+            currentSelection_.pos2  = savedCursorPosition_;
         }
-        // }} CURSOR
+        currentCursorMode_      = Normal;
+        savedCursorPosition_    = QModelIndex();
+        qDebug() << "Cursor mode: Normal pos1:"
+                 << currentSelection_.pos1 << "pos2:" << currentSelection_.pos2;
+    break;
     }
-    else if (event->key() == Qt::Key_Escape)
+}
+
+void QBinaryDataViewViewport::Cursor_keyPressEvent(QKeyEvent *event)
+{
+    QModelIndex newIndex;
+
+    if (!event->text().isEmpty() && QString("0123456789abcdefABCDEF").indexOf(event->text()) >= 0)
     {
-        // {{ CURSOR clearInputBuffer
-        if (!currentCursorInputBuffer_.isEmpty())
+        newIndex = Cursor_addToInputBuffer(event->text().toUpper().at(0).toAscii());
+    }
+    else
+    {
+        switch (event->key())
         {
-            currentCursorInputBuffer_.clear();
-            // Repaint
-            repaint();
+        case Qt::Key_Escape:
+            currentSelection_.pos1  = QModelIndex();
+            currentSelection_.pos2  = QModelIndex();
+            newIndex = Cursor_clearInputBuffer();
+        break;
+        case Qt::Key_Shift:
+            currentSelection_.pos1  = QModelIndex();
+            currentSelection_.pos2  = QModelIndex();
+            currentCursorMode_      = Selection;
+            savedCursorPosition_    = currentCursorPosition_;
+            qDebug() << "Cursor mode: Selection saved:"
+                     << savedCursorPosition_;
+        break;
+        case Qt::Key_Left:
+            newIndex = dataSource_->prevIndex(currentCursorPosition_);
+        break;
+        case Qt::Key_Right:
+            newIndex = dataSource_->nextIndex(currentCursorPosition_);
+        break;
+        case Qt::Key_Up:
+            newIndex = dataSource_->index(currentCursorPosition_.row()-1,currentCursorPosition_.column());
+        break;
+        case Qt::Key_Down:
+            newIndex = dataSource_->index(currentCursorPosition_.row()+1,currentCursorPosition_.column());
+        break;
+        default:;
         }
-        // }} CURSOR
-    }
-    else if (event->key() == Qt::Key_Left)
-    {
-        newIndex = dataSource_->prevIndex(currentCursorPosition_);
-    }
-    else if (event->key() == Qt::Key_Right)
-    {
-        newIndex = dataSource_->nextIndex(currentCursorPosition_);
-    }
-    else if (event->key() == Qt::Key_Up)
-    {
-        newIndex = dataSource_->index(currentCursorPosition_.row()-1,currentCursorPosition_.column());
-    }
-    else if (event->key() == Qt::Key_Down)
-    {
-        newIndex = dataSource_->index(currentCursorPosition_.row()+1,currentCursorPosition_.column());
     }
 
     if (newIndex.isValid())
     {
-        moveCursorToIndex(newIndex);
+        if (currentCursorMode_ == Selection)
+        {
+            qDebug() << "Cursor mode: Selection saved:"
+                     << savedCursorPosition_ << "current:" << currentCursorPosition_;
+        }
+        Cursor_moveToIndex(newIndex);
     }
-
-    event->accept();
-
-    TRACE_OUT;
 }
 
-QModelIndex QBinaryDataViewViewport::cursorPosition(void) const
+QModelIndex QBinaryDataViewViewport::Cursor_position(void) const
 {
     TRACE_IN;
 
@@ -1150,7 +1261,7 @@ QModelIndex QBinaryDataViewViewport::cursorPosition(void) const
     return currentCursorPosition_;
 }
 
-void QBinaryDataViewViewport::setCursorPosition(const QModelIndex &position)
+void QBinaryDataViewViewport::Cursor_setPosition(const QModelIndex &position)
 {
     TRACE_IN;
 

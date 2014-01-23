@@ -86,6 +86,13 @@ void QBinaryDataView::keyPressEvent(QKeyEvent * event)
     }
 }
 
+void QBinaryDataView::keyReleaseEvent(QKeyEvent * event)
+{
+    Q_ASSERT(viewport_);
+
+    viewport_->keyReleaseEvent(event);
+}
+
 void QBinaryDataView::gotoAddress(quint64 pos)
 {
     if (!viewport_->dataSource())
@@ -94,6 +101,6 @@ void QBinaryDataView::gotoAddress(quint64 pos)
     QModelIndex index = viewport_->dataSource()->offsetToIndex(pos);
     if (index.isValid())
     {
-        viewport_->moveCursorToIndex(index);
+        viewport_->Cursor_moveToIndex(index);
     }
 }

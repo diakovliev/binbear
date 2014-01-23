@@ -10,7 +10,10 @@ SOURCES += main.cpp \
     qbinarydataviewviewport.cpp \
     qbinarydatainterpretation.cpp \
     qbinarydatasourceproxy.cpp \
-    qabstractbinarydatasource.cpp
+    qabstractbinarydatasource.cpp \
+    qabstractbinarydatasourceselection.cpp \
+    qbinarydatasourceselection_list.cpp \
+    qbinarydatasourceselection_range.cpp
 HEADERS += mainwindow.h \
     qbinarydatasource.h \
     qbinarydataview.h \
@@ -18,5 +21,8 @@ HEADERS += mainwindow.h \
     qbinarydatainterpretation.h \
     binbear.h \
     qbinarydatasourceproxy.h \
-    qabstractbinarydatasource.h
+    qabstractbinarydatasource.h \
+    qabstractbinarydatasourceselection.h \
+    qbinarydatasourceselection_list.h \
+    qbinarydatasourceselection_range.h
 FORMS += mainwindow.ui

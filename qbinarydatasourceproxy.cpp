@@ -12,6 +12,11 @@ QBinaryDataSourceProxy::QBinaryDataSourceProxy(QBinaryDataSource *source)
 {
 }
 
+QBinaryDataSourceProxy::~QBinaryDataSourceProxy()
+{
+
+}
+
 QModelIndex QBinaryDataSourceProxy::parent(const QModelIndex &index) const
 {
     Q_ASSERT(source_ != 0);
@@ -46,6 +51,18 @@ QVariant QBinaryDataSourceProxy::headerData(int section, Qt::Orientation orienta
 {
     Q_ASSERT(source_ != 0);
     return source_->headerData(section, orientation, role);
+}
+
+void QBinaryDataSourceProxy::setViewWidth(quint8 viewWidth)
+{
+    Q_ASSERT(source_ != 0);
+    source_->setViewWidth(viewWidth);
+}
+
+quint8 QBinaryDataSourceProxy::viewWidth(void) const
+{
+    Q_ASSERT(source_ != 0);
+    return source_->viewWidth();
 }
 
 QVariant QBinaryDataSourceProxy::data(const QModelIndex &index, int role) const
@@ -147,3 +164,15 @@ bool QBinaryDataSourceProxy::revertChanges()
 
     return true;
 }
+
+//QBinaryDataSourceSelection_List *QBinaryDataSourceProxy::createSelection(const QModelIndex &index)
+//{
+//    Q_ASSERT(source_ != 0);
+//    return source_->createSelection(index);
+//}
+
+//QBinaryDataSourceSelection_Range *QBinaryDataSourceProxy::createSelection(const QModelIndex &begin, const QModelIndex &end)
+//{
+//    Q_ASSERT(source_ != 0);
+//    return source_->createSelection(begin, end);
+//}

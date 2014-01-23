@@ -10,7 +10,6 @@
 QBinaryDataSource::QBinaryDataSource(QObject *parent)
     : QAbstractBinaryDataSource(parent)
     , ioDevice_(0)
-    , viewWidth_(20)
 {
 }
 
@@ -40,22 +39,6 @@ QIODevice *QBinaryDataSource::detachFrom(void)
 }
 
 /******************************************************************************/
-/* View management */
-void QBinaryDataSource::setViewWidth(quint8 viewWidth)
-{
-    if (viewWidth_ != viewWidth) {
-        viewWidth_ = viewWidth;
-        reset();
-    }
-}
-
-/******************************************************************************/
-quint8 QBinaryDataSource::viewWidth(void) const
-{
-    return viewWidth_;
-}
-
-/******************************************************************************/
 /* QAbstractItemModel */
 QModelIndex QBinaryDataSource::parent(const QModelIndex &index) const
 {
@@ -76,7 +59,7 @@ QModelIndex QBinaryDataSource::index(int row, int column, const QModelIndex &par
         return QModelIndex();
     }
 
-    quint64 pos = row * viewWidth_ + column;
+    quint64 pos = row * viewWidth() + column;
     quint64 size = ioDevice_->size();
     if (pos >= size)
     {
@@ -93,7 +76,7 @@ QModelIndex QBinaryDataSource::nextIndex(const QModelIndex &index) const
         return QModelIndex();
 
     /* real position */
-    quint64 pos = index.row() * viewWidth_ + index.column();
+    quint64 pos = index.row() * viewWidth() + index.column();
     ++pos;
 
     quint64 size = ioDevice_->size();
@@ -109,10 +92,10 @@ QModelIndex QBinaryDataSource::prevIndex(const QModelIndex &index) const
     if (!index.isValid())
         return QModelIndex();
 
-    if (index.row() * viewWidth_ + index.column() - 1  < 0)
+    if (index.row() * viewWidth() + index.column() - 1  < 0)
         return QModelIndex();
 
-    quint64 pos = index.row() * viewWidth_ + index.column();
+    quint64 pos = index.row() * viewWidth() + index.column();
     --pos;
 
     return offsetToIndex(pos);
@@ -121,8 +104,8 @@ QModelIndex QBinaryDataSource::prevIndex(const QModelIndex &index) const
 /******************************************************************************/
 QModelIndex QBinaryDataSource::offsetToIndex(quint64 offset) const
 {
-    int row     = offset / viewWidth_;
-    int column  = offset % viewWidth_;
+    int row     = offset / viewWidth();
+    int column  = offset % viewWidth();
 
     return createIndex(row, column, 0);
 }
@@ -133,10 +116,10 @@ quint64 QBinaryDataSource::indexToOffset(QModelIndex index) const
     if (!index.isValid())
         return 0;
 
-    if (index.row() * viewWidth_ + index.column() - 1  < 0)
+    if (index.row() * viewWidth() + index.column() - 1  < 0)
         return 0;
 
-    quint64 pos = index.row() * viewWidth_ + index.column();
+    quint64 pos = index.row() * viewWidth() + index.column();
 
     quint64 size = ioDevice_->size();
     if ( size - 1 < pos )
@@ -157,11 +140,11 @@ int QBinaryDataSource::rowCount(const QModelIndex & parent) const
         result = std::numeric_limits<int>::max();
 
         Q_ASSERT_X(ioDevice_->isOpen(), __FUNCTION__, "ioDevice should be opened");
-        Q_ASSERT_X(viewWidth_ > 0, __FUNCTION__, "viewWidth_ is zero");
+        Q_ASSERT_X(viewWidth() > 0, __FUNCTION__, "viewWidth_ is zero");
 
         quint64 size = ioDevice_->size();
-        result = size / viewWidth_ +
-             (size % viewWidth_ ? 1 : 0);
+        result = size / viewWidth() +
+             (size % viewWidth() ? 1 : 0);
     }
 
     return result;
@@ -175,9 +158,9 @@ int QBinaryDataSource::columnCount(const QModelIndex & parent) const
     if (!ioDevice_)
         return 0;
 
-    Q_ASSERT_X(viewWidth_ > 0, __FUNCTION__, "viewWidth_ is zero");
+    Q_ASSERT_X(viewWidth() > 0, __FUNCTION__, "viewWidth_ is zero");
 
-    return viewWidth_;
+    return viewWidth();
 }
 
 /******************************************************************************/
@@ -186,7 +169,7 @@ QVariant QBinaryDataSource::headerData(int section, Qt::Orientation orientation,
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         return QString().sprintf("+0x%02X", section);
     } else if (orientation == Qt::Vertical && role == Qt::DisplayRole) {
-        return QString().sprintf("0x%08X", section*viewWidth_);
+        return QString().sprintf("0x%08X", section*viewWidth());
     }
     return QVariant();
 }
@@ -197,11 +180,11 @@ QVariant QBinaryDataSource::data(const QModelIndex &index, int role) const
     if (!index.isValid())
         return QVariant();
 
-    quint64 pos = index.row() * viewWidth_ + index.column();
+    quint64 pos = index.row() * viewWidth() + index.column();
     char byte = 0;
 
     Q_ASSERT_X(ioDevice_->isOpen(), __FUNCTION__, "ioDevice should be opened");
-    Q_ASSERT_X(viewWidth_ > 0, __FUNCTION__, "viewWidth_ is zero");
+    Q_ASSERT_X(viewWidth() > 0, __FUNCTION__, "viewWidth_ is zero");
 
     /* Qt::DisplayRole */
     if (role == Qt::UserRole){
@@ -247,7 +230,7 @@ QVariant QBinaryDataSource::data(const QModelIndex &index, int role) const
 
         /* Address */
 
-        quint64 pos = index.row() * viewWidth_ + index.column();
+        quint64 pos = index.row() * viewWidth() + index.column();
 
         return QString().sprintf("%08X",pos);
 
@@ -269,11 +252,11 @@ bool QBinaryDataSource::setData(const QModelIndex & index, const QVariant & valu
     if (role != Qt::EditRole)
         return false;
 
-    quint64 pos = index.row() * viewWidth_ + index.column();
+    quint64 pos = index.row() * viewWidth() + index.column();
     char byte = 0;
 
     Q_ASSERT_X(ioDevice_->isOpen(), __FUNCTION__, "ioDevice should be opened");
-    Q_ASSERT_X(viewWidth_ > 0, __FUNCTION__, "viewWidth_ is zero");
+    Q_ASSERT_X(viewWidth() > 0, __FUNCTION__, "viewWidth_ is zero");
 
     /* byte hex presentation */
     QString p = value.toString();
@@ -323,3 +306,15 @@ QBinaryDataSourceProxy *QBinaryDataSource::createProxy()
 {
     return new QBinaryDataSourceProxy(this);
 }
+
+///******************************************************************************/
+//QBinaryDataSourceSelection_List *QBinaryDataSource::createSelection(const QModelIndex &index)
+//{
+//    return 0;
+//}
+
+///******************************************************************************/
+//QBinaryDataSourceSelection_Range *QBinaryDataSource::createSelection(const QModelIndex &begin, const QModelIndex &end)
+//{
+//    return 0;
+//}

@@ -10,6 +10,7 @@ class QBinaryDataSourceProxy : public QAbstractBinaryDataSource
     Q_OBJECT
 public:
     explicit QBinaryDataSourceProxy(QBinaryDataSource *source);
+    virtual ~QBinaryDataSourceProxy();
 
     /* QAbstractItemModel */
     QModelIndex parent(const QModelIndex &index) const;
@@ -29,12 +30,18 @@ public:
     QModelIndex offsetToIndex(quint64 offset) const;
     quint64 indexToOffset(QModelIndex index) const;
 
+    void setViewWidth(quint8 viewWidth);
+    quint8 viewWidth(void) const;
+
     /* Do we have any changes */
     bool doWeHaveChangesToCommit();
 
     /* Commit/Revert changes */
     bool commitChanges();
     bool revertChanges();
+
+//    QBinaryDataSourceSelection_List *createSelection(const QModelIndex &index);
+//    QBinaryDataSourceSelection_Range *createSelection(const QModelIndex &begin, const QModelIndex &end);
 
 signals:
     

@@ -21,10 +21,6 @@ public:
     void setInterpretation(QBinaryDataInterpretation *interptretation);
     QBinaryDataInterpretation *interpretation() const;
 
-    /* View management */
-    void setViewWidth(quint8 viewWidth);
-    quint8 viewWidth(void) const;
-
     /* QAbstractItemModel */
     QModelIndex parent(const QModelIndex &index) const;
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
@@ -46,6 +42,9 @@ public:
     /* Edit proxy */
     QBinaryDataSourceProxy *createProxy();
 
+//    QBinaryDataSourceSelection_List *createSelection(const QModelIndex &index);
+//    QBinaryDataSourceSelection_Range *createSelection(const QModelIndex &begin, const QModelIndex &end);
+
 signals:
 
 public slots:
@@ -53,9 +52,6 @@ public slots:
 private:
     /* IO source */
     QIODevice *ioDevice_;
-
-    /* View management */
-    quint8 viewWidth_;
 
 };
 
