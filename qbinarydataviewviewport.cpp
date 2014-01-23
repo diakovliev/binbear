@@ -1,6 +1,3 @@
-#include "qbinarydataviewviewport.h"
-#include "qbinarydatasourceselection_range.h"
-
 #include <QPaintEvent>
 #include <QPainter>
 #include <QStyle>
@@ -11,6 +8,8 @@
 #include <QTimer>
 #include <QStyleOptionFocusRect>
 #include <QColor>
+
+#include "qbinarydataviewviewport.h"
 
 #define DEBUG_GEOMETRY 0
 //#define TRACE
@@ -46,7 +45,6 @@ public:
 QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
     : QWidget(parent)
     , dataSource_(0)
-    , selection_(0)
     , scrollArea_(0)
     , groupSize_(4)
     , linesPerPage_(1)
@@ -914,12 +912,22 @@ void QBinaryDataViewViewport::mousePressEvent(QMouseEvent * event)
     TRACE_IN;
 
     //qDebug("MOUSE PRESS   x: %d y: %d", event->pos().x(), event->pos().y());
-    if (Qt::LeftButton == event->button())
+    switch (event->button())
+    {
+    case Qt::LeftButton:
     {
         Cursor_updatePositionByMouseEvent(event);
         Cursor_startSelection();
 
         event->accept();
+    }
+    break;
+//    case Qt::RightButton:
+//    {
+//        emit queryForContextMenu(event->pos());
+//    }
+//    break;
+    default:;
     }
 
     TRACE_OUT;
@@ -930,12 +938,22 @@ void QBinaryDataViewViewport::mouseReleaseEvent(QMouseEvent * event)
     TRACE_IN;
 
     //qDebug("MOUSE RELEASE   x: %d y: %d", event->pos().x(), event->pos().y());
-    if (Qt::LeftButton == event->button())
+    switch (event->button())
+    {
+    case Qt::LeftButton:
     {
         Cursor_updatePositionByMouseEvent(event);
         Cursor_finishSelection();
 
         event->accept();
+    }
+    break;
+//    case Qt::RightButton:
+//    {
+
+//    }
+//    break;
+    default:;
     }
 
     TRACE_OUT;
@@ -1207,6 +1225,8 @@ void QBinaryDataViewViewport::Cursor_resetSelection()
     currentSelection_.pos1  = QModelIndex();
     currentSelection_.pos2  = QModelIndex();
 
+    update();
+
     emit Cursor_selectionCanceled();
 }
 
@@ -1216,12 +1236,14 @@ void QBinaryDataViewViewport::Cursor_startSelection()
 
     currentCursorMode_      = Selection;
     savedCursorPosition_    = currentCursorPosition_;
+
+    update();
 }
 
 void QBinaryDataViewViewport::Cursor_finishSelection()
 {
     if (dataSource_->indexToOffset(savedCursorPosition_)
-            <= dataSource_->indexToOffset(currentCursorPosition_))
+        <= dataSource_->indexToOffset(currentCursorPosition_))
     {
         currentSelection_.pos1  = savedCursorPosition_;
         currentSelection_.pos2  = currentCursorPosition_;
@@ -1233,6 +1255,8 @@ void QBinaryDataViewViewport::Cursor_finishSelection()
     }
     currentCursorMode_      = Normal;
     savedCursorPosition_    = QModelIndex();
+
+    update();
 
     emit Cursor_selectionDone(currentSelection_.pos1, currentSelection_.pos2);
 }
@@ -1261,7 +1285,6 @@ void QBinaryDataViewViewport::Cursor_keyPressEvent(QKeyEvent *event)
         {
         case Qt::Key_Escape:
             Cursor_resetSelection();
-
             newIndex = Cursor_clearInputBuffer();
         break;
         case Qt::Key_Shift:

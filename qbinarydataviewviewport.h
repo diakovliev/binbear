@@ -8,7 +8,6 @@
 #include <QScrollArea>
 
 #include "qabstractbinarydatasource.h"
-#include "qabstractbinarydatasourceselection.h"
 
 enum ViewportItemDataType {
     RowIndex = Qt::UserRole + 1,
@@ -82,6 +81,7 @@ signals:
     void Cursor_selectionChanged(const QModelIndex &begin, const QModelIndex &end);
     void Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end);
     void Cursor_selectionCanceled();
+    void queryForContextMenu(QPoint pos);
 
 public slots:    
     void setTopRow(int topRow);
@@ -152,7 +152,6 @@ private:
     };
 
     QAbstractBinaryDataSource           *dataSource_;
-    QAbstractBinaryDataSourceSelection  *selection_;
     QAbstractScrollArea                 *scrollArea_;
 
     quint8                  groupSize_;
