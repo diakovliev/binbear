@@ -38,6 +38,16 @@ public:
         NOT_PRINTABLE_ITEM = '.'
     };
 
+    struct DataSelection {
+        QModelIndex pos1;
+        QModelIndex pos2;
+
+        bool isValid()
+        {
+            return pos1.isValid() && pos2.isValid();
+        }
+    };
+
     explicit QBinaryDataViewViewport(QWidget *parent = 0);
     virtual ~QBinaryDataViewViewport(void);
 
@@ -65,8 +75,11 @@ public:
     void keyPressEvent(QKeyEvent * event);
     void keyReleaseEvent(QKeyEvent * event);
 
+    DataSelection selection() const;
+
 signals:
     void Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);
+    void Cursor_selectionChanged(const QModelIndex &begin, const QModelIndex &end);
     void Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end);
     void Cursor_selectionCanceled();
 
@@ -81,7 +94,7 @@ public slots:
 protected:
     QList<ViewportItemData> getDataToRender(int rowsPerScreen);
 
-    void paintItem(QPainter &painter, const QRect &itemRect, const QMap<int,QVariant> &data, bool isSelected);
+    void paintItem(QPainter &painter, const QRect &itemRect, const QMap<int,QVariant> &data);
     void paintViewport(QPainter &painter, QStringList &addresses, QStringList &presentations);
     void paintAddressBar(QPainter &painter, const QStringList &addresses);
     void paintPresenationBar(QPainter &painter, const QStringList &presenations);
@@ -109,6 +122,9 @@ protected:
     QModelIndex Cursor_position(void) const;
     void Cursor_keyPressEvent(QKeyEvent *event);
     void Cursor_keyReleaseEvent(QKeyEvent *event);
+    void Cursor_startSelection();
+    void Cursor_finishSelection();
+    void Cursor_resetSelection();
 
 private:
 
@@ -169,10 +185,7 @@ private:
     ViewportItemData        currentCursorItemData_;
     QByteArray              currentCursorInputBuffer_;
     Cursor_Mode             currentCursorMode_;
-    struct {
-        QModelIndex pos1;
-        QModelIndex pos2;
-    }                       currentSelection_;
+    DataSelection           currentSelection_;
 
 };
 

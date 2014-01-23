@@ -117,6 +117,7 @@ void MainWindow::closeCurrentFile()
     setWindowTitle(APP_NAME);
 
     disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_positionChanged(const QModelIndex &, const QModelIndex &)));
+    disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionChanged(const QModelIndex &, const QModelIndex &)));
     disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionDone(const QModelIndex &, const QModelIndex &)));
     disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionCanceled()));
 
@@ -170,6 +171,8 @@ void MainWindow::openFile(const QString &fileName)
 
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_positionChanged(const QModelIndex &, const QModelIndex &))
                 , this, SLOT(on_viewport_Cursor_positionChanged(const QModelIndex &, const QModelIndex &)));
+        connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionChanged(const QModelIndex &, const QModelIndex &))
+                , this, SLOT(on_viewport_Cursor_selectionDone(const QModelIndex &, const QModelIndex &)));
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionDone(const QModelIndex &, const QModelIndex &))
                 , this, SLOT(on_viewport_Cursor_selectionDone(const QModelIndex &, const QModelIndex &)));
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionCanceled())
