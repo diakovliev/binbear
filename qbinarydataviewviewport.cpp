@@ -1193,11 +1193,15 @@ QModelIndex QBinaryDataViewViewport::Cursor_addToInputBuffer(char inputData)
     {
         QString presentation = QString::fromAscii(currentCursorInputBuffer_);
         //qDebug() << "INPUT  presentation: '" << presentation << "'";
-        dataSource_->setData(currentCursorPosition_, presentation);
+        if (dataSource_) {
+            dataSource_->setData(currentCursorPosition_, presentation);
+        }
         currentCursorInputBuffer_.clear();
 
         // Goto next position
-        newIndex = dataSource_->nextIndex(currentCursorPosition_);
+        if (dataSource_) {
+            newIndex = dataSource_->nextIndex(currentCursorPosition_);
+        }
     }
     else
     {
@@ -1242,23 +1246,26 @@ void QBinaryDataViewViewport::Cursor_startSelection()
 
 void QBinaryDataViewViewport::Cursor_finishSelection()
 {
-    if (dataSource_->indexToOffset(savedCursorPosition_)
-        <= dataSource_->indexToOffset(currentCursorPosition_))
+    if (dataSource_)
     {
-        currentSelection_.pos1  = savedCursorPosition_;
-        currentSelection_.pos2  = currentCursorPosition_;
-    }
-    else
-    {
-        currentSelection_.pos1  = currentCursorPosition_;
-        currentSelection_.pos2  = savedCursorPosition_;
-    }
-    currentCursorMode_      = Normal;
-    savedCursorPosition_    = QModelIndex();
+        if (dataSource_->indexToOffset(savedCursorPosition_)
+            <= dataSource_->indexToOffset(currentCursorPosition_))
+        {
+            currentSelection_.pos1  = savedCursorPosition_;
+            currentSelection_.pos2  = currentCursorPosition_;
+        }
+        else
+        {
+            currentSelection_.pos1  = currentCursorPosition_;
+            currentSelection_.pos2  = savedCursorPosition_;
+        }
+        currentCursorMode_      = Normal;
+        savedCursorPosition_    = QModelIndex();
 
-    update();
+        update();
 
-    emit Cursor_selectionDone(currentSelection_.pos1, currentSelection_.pos2);
+        emit Cursor_selectionDone(currentSelection_.pos1, currentSelection_.pos2);
+    }
 }
 
 void QBinaryDataViewViewport::Cursor_keyReleaseEvent(QKeyEvent *event)
@@ -1291,16 +1298,16 @@ void QBinaryDataViewViewport::Cursor_keyPressEvent(QKeyEvent *event)
             Cursor_startSelection();
         break;
         case Qt::Key_Left:
-            newIndex = dataSource_->prevIndex(currentCursorPosition_);
+            if (dataSource_) newIndex = dataSource_->prevIndex(currentCursorPosition_);
         break;
         case Qt::Key_Right:
-            newIndex = dataSource_->nextIndex(currentCursorPosition_);
+            if (dataSource_) newIndex = dataSource_->nextIndex(currentCursorPosition_);
         break;
         case Qt::Key_Up:
-            newIndex = dataSource_->index(currentCursorPosition_.row()-1,currentCursorPosition_.column());
+            if (dataSource_) newIndex = dataSource_->index(currentCursorPosition_.row()-1,currentCursorPosition_.column());
         break;
         case Qt::Key_Down:
-            newIndex = dataSource_->index(currentCursorPosition_.row()+1,currentCursorPosition_.column());
+            if (dataSource_) newIndex = dataSource_->index(currentCursorPosition_.row()+1,currentCursorPosition_.column());
         break;
         default:;
         }
