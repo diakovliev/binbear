@@ -11,7 +11,6 @@
 
 #include "qbinarydatasource.h"
 #include "qbinarydatasourceproxy.h"
-#include "qbinarydatainterpretation.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

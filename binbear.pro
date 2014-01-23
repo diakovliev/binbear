@@ -8,14 +8,12 @@ SOURCES += main.cpp \
     qbinarydatasource.cpp \
     qbinarydataview.cpp \
     qbinarydataviewviewport.cpp \
-    qbinarydatainterpretation.cpp \
     qbinarydatasourceproxy.cpp \
     qabstractbinarydatasource.cpp
 HEADERS += mainwindow.h \
     qbinarydatasource.h \
     qbinarydataview.h \
     qbinarydataviewviewport.h \
-    qbinarydatainterpretation.h \
     binbear.h \
     qbinarydatasourceproxy.h \
     qabstractbinarydatasource.h
