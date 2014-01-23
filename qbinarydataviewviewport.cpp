@@ -115,6 +115,8 @@ void QBinaryDataViewViewport::setDataSource(QAbstractBinaryDataSource *newDataSo
         currentSelection_.pos2 = QModelIndex();
 
         update();
+
+        emit Cursor_positionChanged(QModelIndex(), currentCursorPosition_);
     }
 
     TRACE_OUT;
@@ -1064,6 +1066,14 @@ void QBinaryDataViewViewport::Cursor_moveToIndex(const QModelIndex& index)
 
     emit Cursor_positionChanged(prev, currentCursorPosition_);
 
+    if (Selection == currentCursorMode_)
+    {
+        if (dataSource_->indexToOffset(currentCursorPosition_) > dataSource_->indexToOffset(savedCursorPosition_))
+            emit Cursor_selectionDone(savedCursorPosition_, currentCursorPosition_);
+        else
+            emit Cursor_selectionDone(currentCursorPosition_, savedCursorPosition_);
+    }
+
     // Force show cursor
     cursorVisibility_ = true;
     repaint();
@@ -1119,6 +1129,8 @@ void QBinaryDataViewViewport::Cursor_updatePositionByMouseEvent(QMouseEvent * ev
         QRegion itemRegion = (*iter)[ViewportRect].toRect();
         if (itemRegion.contains(event->pos()))
         {
+            QModelIndex prev = currentCursorPosition_;
+
             // {{ CURSOR setupCursor
             //qDebug() << "ITEM   " << (*iter)[RawData].toChar();
             currentCursorPosition_ = dataSource_->index((*iter)[RowIndex].toInt(),
@@ -1131,6 +1143,8 @@ void QBinaryDataViewViewport::Cursor_updatePositionByMouseEvent(QMouseEvent * ev
             // }} CURSOR
 
             repaint();
+
+            emit Cursor_positionChanged(prev, currentCursorPosition_);
 
             break;
         }
@@ -1194,8 +1208,12 @@ void QBinaryDataViewViewport::Cursor_keyReleaseEvent(QKeyEvent *event)
         }
         currentCursorMode_      = Normal;
         savedCursorPosition_    = QModelIndex();
-        qDebug() << "Cursor mode: Normal pos1:"
-                 << currentSelection_.pos1 << "pos2:" << currentSelection_.pos2;
+
+//        qDebug() << "Cursor mode: Normal pos1:"
+//                 << currentSelection_.pos1 << "pos2:" << currentSelection_.pos2;
+
+        emit Cursor_selectionDone(currentSelection_.pos1, currentSelection_.pos2);
+
     break;
     }
 }
@@ -1215,15 +1233,21 @@ void QBinaryDataViewViewport::Cursor_keyPressEvent(QKeyEvent *event)
         case Qt::Key_Escape:
             currentSelection_.pos1  = QModelIndex();
             currentSelection_.pos2  = QModelIndex();
+
+            emit Cursor_selectionCanceled();
+
             newIndex = Cursor_clearInputBuffer();
         break;
         case Qt::Key_Shift:
             currentSelection_.pos1  = QModelIndex();
             currentSelection_.pos2  = QModelIndex();
+
+            emit Cursor_selectionCanceled();
+
             currentCursorMode_      = Selection;
             savedCursorPosition_    = currentCursorPosition_;
-            qDebug() << "Cursor mode: Selection saved:"
-                     << savedCursorPosition_;
+            //qDebug() << "Cursor mode: Selection saved:"
+            //         << savedCursorPosition_;
         break;
         case Qt::Key_Left:
             newIndex = dataSource_->prevIndex(currentCursorPosition_);
@@ -1243,11 +1267,6 @@ void QBinaryDataViewViewport::Cursor_keyPressEvent(QKeyEvent *event)
 
     if (newIndex.isValid())
     {
-        if (currentCursorMode_ == Selection)
-        {
-            qDebug() << "Cursor mode: Selection saved:"
-                     << savedCursorPosition_ << "current:" << currentCursorPosition_;
-        }
         Cursor_moveToIndex(newIndex);
     }
 }

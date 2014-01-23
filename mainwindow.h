@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QFile>
+#include <QLabel>
 
 #include "qbinarydatasource.h"
 
@@ -24,12 +25,18 @@ protected:
     void readSettings();
     void closeEvent(QCloseEvent *event);
 
+    void setupStatusBar();
+
 public slots:
     void on_action_gotoAddress_triggered();
     void on_action_commitChanges_triggered();
     void on_action_revertChanges_triggered();
     void on_action_Open_triggered();
     void on_action_Quit_triggered();
+
+    void on_viewport_Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);
+    void on_viewport_Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end);
+    void on_viewport_Cursor_selectionCanceled();
 
 signals:
 
@@ -38,6 +45,11 @@ private:
 
     QFile *currentFile_;
     QBinaryDataSource *currentDS_;
+
+    // status bar
+    QLabel *statusLabel_;
+    QLabel *addressLabel_;
+    QLabel *fileStatusLabel_;
 
 };
 

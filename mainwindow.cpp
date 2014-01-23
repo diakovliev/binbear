@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
     , currentDS_(0)
 {    
     ui->setupUi(this);
+    setupStatusBar();
 
     //--------------------------------------------
     //connect(ui->action_Open, SIGNAL(triggered()), this, SLOT(on_action_Open_triggered()));
@@ -35,6 +36,22 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::setupStatusBar()
+{
+    statusLabel_ = new QLabel(ui->statusBar);
+    addressLabel_ = new QLabel(ui->statusBar);
+    fileStatusLabel_ = new QLabel(ui->statusBar);
+
+    addressLabel_->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    addressLabel_->setMinimumWidth(100);
+    fileStatusLabel_->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    fileStatusLabel_->setMinimumWidth(100);
+
+    ui->statusBar->insertWidget(-1, statusLabel_, 1);
+    ui->statusBar->insertWidget(-1, addressLabel_, 0);
+    ui->statusBar->insertWidget(-1, fileStatusLabel_, 0);
 }
 
 void MainWindow::readSettings()
@@ -99,6 +116,10 @@ void MainWindow::closeCurrentFile()
 
     setWindowTitle(APP_NAME);
 
+    disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_positionChanged(const QModelIndex &, const QModelIndex &)));
+    disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionDone(const QModelIndex &, const QModelIndex &)));
+    disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionCanceled()));
+
     if (ui->binaryDataView->dataSource() != 0)
     {
         ui->binaryDataView->setDataSource(0);
@@ -109,6 +130,25 @@ void MainWindow::closeCurrentFile()
         delete currentDS_;
         currentDS_ = 0;
     }
+}
+
+void MainWindow::on_viewport_Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current)
+{
+    addressLabel_->setText(QString().sprintf("0x%08X", (int)currentDS_->indexToOffset(current)));
+}
+
+void MainWindow::on_viewport_Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end)
+{
+    quint64 b = currentDS_->indexToOffset(begin);
+    quint64 e = currentDS_->indexToOffset(end);
+
+    statusLabel_->setText(QString()
+        .sprintf("0x%08X - 0x%08X (%ld)", (int)b, (int)e, e-b+1));
+}
+
+void MainWindow::on_viewport_Cursor_selectionCanceled()
+{
+    statusLabel_->setText(QString());
 }
 
 void MainWindow::openFile(const QString &fileName)
@@ -127,6 +167,20 @@ void MainWindow::openFile(const QString &fileName)
     {
         currentDS_ = new QBinaryDataSource(ui->binaryDataView);
         currentDS_->attachTo(currentFile_);
+
+        /*
+        void Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);
+        void Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end);
+        void Cursor_selectionCanceled();
+          */
+
+        connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_positionChanged(const QModelIndex &, const QModelIndex &))
+                , this, SLOT(on_viewport_Cursor_positionChanged(const QModelIndex &, const QModelIndex &)));
+        connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionDone(const QModelIndex &, const QModelIndex &))
+                , this, SLOT(on_viewport_Cursor_selectionDone(const QModelIndex &, const QModelIndex &)));
+        connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionCanceled())
+                , this, SLOT(on_viewport_Cursor_selectionCanceled()));
+
         ui->binaryDataView->setDataSource(currentDS_->createProxy());
 
         connect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
@@ -136,6 +190,7 @@ void MainWindow::openFile(const QString &fileName)
         ui->actionGoto_address->setEnabled(true);
         ui->actionCommit_changes->setEnabled(true);
         ui->actionRevert_changes->setEnabled(true);
+
 
         settings.setValue("MainWindow/lastFile", fileName);
         setWindowTitle(QString("%1 <%2>").arg(APP_NAME).arg(QFileInfo(fileName).fileName()));

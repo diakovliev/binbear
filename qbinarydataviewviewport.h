@@ -67,9 +67,8 @@ public:
 
 signals:
     void Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);
-    void Cursor_selectionStarted();
-    void Cursor_selectionChanged();
-    void Cursor_selectionStopped();
+    void Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end);
+    void Cursor_selectionCanceled();
 
 public slots:    
     void setTopRow(int topRow);
