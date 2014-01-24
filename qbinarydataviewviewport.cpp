@@ -981,7 +981,7 @@ void QBinaryDataViewViewport::keyReleaseEvent (QKeyEvent * event)
     TRACE_OUT;
 }
 
-bool QBinaryDataViewViewport::isSupportedKeyEvent(QKeyEvent * event)
+bool QBinaryDataViewViewport::isSupportedKeyPressEvent(QKeyEvent * event) const
 {
     TRACE_IN;
 
@@ -1000,6 +1000,19 @@ bool QBinaryDataViewViewport::isSupportedKeyEvent(QKeyEvent * event)
             event->key() == Qt::Key_Escape  ||
             event->key() == Qt::Key_Shift    ;
     }
+
+    TRACE_OUT;
+
+    return res;
+}
+
+bool QBinaryDataViewViewport::isSupportedKeyReleaseEvent(QKeyEvent * event) const
+{
+    TRACE_IN;
+
+    bool res = false;
+
+    res = event->key() == Qt::Key_Shift;
 
     TRACE_OUT;
 

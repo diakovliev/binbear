@@ -12,6 +12,8 @@
 #include "qbinarydatasource.h"
 #include "qbinarydatasourceproxy.h"
 
+#include "qbinarydataformatter_cxxarray.h"
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -87,7 +89,7 @@ void MainWindow::on_action_commitChanges_triggered()
 {
     QBinaryDataSourceProxy *editorProxy =
             qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
-    if (editorProxy)
+    if (editorProxy && editorProxy->doWeHaveChangesToCommit())
     {
         editorProxy->commitChanges();
     }
@@ -97,7 +99,7 @@ void MainWindow::on_action_revertChanges_triggered()
 {
     QBinaryDataSourceProxy *editorProxy =
             qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
-    if (editorProxy)
+    if (editorProxy && editorProxy->doWeHaveChangesToCommit())
     {
         editorProxy->revertChanges();
     }
@@ -129,6 +131,10 @@ void MainWindow::closeCurrentFile()
         currentFile_ = 0;
         delete currentDS_;
         currentDS_ = 0;
+
+        statusLabel_->clear();
+        addressLabel_->clear();
+        fileStatusLabel_->clear();
     }
 }
 
@@ -144,6 +150,10 @@ void MainWindow::on_viewport_Cursor_selectionDone(const QModelIndex &begin, cons
 
     statusLabel_->setText(QString()
         .sprintf("0x%08X - 0x%08X (%ld)", (int)b, (int)e, e-b+1));
+
+    QBinaryDataFormatter_CxxArray formatter("test_array", ui->binaryDataView->dataSource());
+
+    qDebug() << QString::fromAscii(formatter.format(begin, end));
 }
 
 void MainWindow::on_viewport_Cursor_selectionCanceled()
@@ -190,7 +200,6 @@ void MainWindow::openFile(const QString &fileName)
 
         settings.setValue("MainWindow/lastFile", fileName);
         setWindowTitle(QString("%1 <%2>").arg(APP_NAME).arg(QFileInfo(fileName).fileName()));
-
     }
 }
 

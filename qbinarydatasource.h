@@ -42,9 +42,6 @@ public:
     /* Edit proxy */
     QBinaryDataSourceProxy *createProxy();
 
-//    QBinaryDataSourceSelection_List *createSelection(const QModelIndex &index);
-//    QBinaryDataSourceSelection_Range *createSelection(const QModelIndex &begin, const QModelIndex &end);
-
 signals:
 
 public slots:

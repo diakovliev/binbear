@@ -306,15 +306,3 @@ QBinaryDataSourceProxy *QBinaryDataSource::createProxy()
 {
     return new QBinaryDataSourceProxy(this);
 }
-
-///******************************************************************************/
-//QBinaryDataSourceSelection_List *QBinaryDataSource::createSelection(const QModelIndex &index)
-//{
-//    return 0;
-//}
-
-///******************************************************************************/
-//QBinaryDataSourceSelection_Range *QBinaryDataSource::createSelection(const QModelIndex &begin, const QModelIndex &end)
-//{
-//    return 0;
-//}

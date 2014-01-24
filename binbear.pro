@@ -9,12 +9,16 @@ SOURCES += main.cpp \
     qbinarydataview.cpp \
     qbinarydataviewviewport.cpp \
     qbinarydatasourceproxy.cpp \
-    qabstractbinarydatasource.cpp
+    qabstractbinarydatasource.cpp \
+    qabstractbinarydataformatter.cpp \
+    qbinarydataformatter_cxxarray.cpp
 HEADERS += mainwindow.h \
     qbinarydatasource.h \
     qbinarydataview.h \
     qbinarydataviewviewport.h \
     binbear.h \
     qbinarydatasourceproxy.h \
-    qabstractbinarydatasource.h
+    qabstractbinarydatasource.h \
+    qabstractbinarydataformatter.h \
+    qbinarydataformatter_cxxarray.h
 FORMS += mainwindow.ui

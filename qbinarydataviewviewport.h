@@ -60,9 +60,9 @@ public:
     int leftColumn() const;
     int linesPerPage() const;
 
-    void initScrollArea(QAbstractScrollArea *scrollArea);
+    DataSelection selection() const;
 
-    bool isSupportedKeyEvent(QKeyEvent * event);
+    void initScrollArea(QAbstractScrollArea *scrollArea);
 
     void paintEvent(QPaintEvent * event);
     void focusInEvent(QFocusEvent * event);
@@ -71,10 +71,12 @@ public:
     void mouseMoveEvent(QMouseEvent * event);
     void mousePressEvent(QMouseEvent * event);
     void mouseReleaseEvent(QMouseEvent * event);
+
+    bool isSupportedKeyPressEvent(QKeyEvent * event) const;
+    bool isSupportedKeyReleaseEvent(QKeyEvent * event) const;
+
     void keyPressEvent(QKeyEvent * event);
     void keyReleaseEvent(QKeyEvent * event);
-
-    DataSelection selection() const;
 
 signals:
     void Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);

@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QStyle>
 #include <QPalette>
+#include <QDebug>
 
 #include "qbinarydatasourceproxy.h"
 #include "qbinarydatasource.h"
@@ -103,6 +104,9 @@ bool QBinaryDataSourceProxy::setData(const QModelIndex & index, const QVariant &
     else
     {
         cashedData_.insert(index, value);
+
+        emit dataChanged(index);
+
         return true;
     }
 }
@@ -142,37 +146,36 @@ bool QBinaryDataSourceProxy::doWeHaveChangesToCommit()
 /* Commit/Revert changes */
 bool QBinaryDataSourceProxy::commitChanges()
 {
+    bool ret = true;
+
     Q_ASSERT(source_ != 0);
 
     QList<QModelIndex> indexes = cashedData_.keys();
     foreach (QModelIndex index, indexes)
     {
-        source_->setData(index, cashedData_.value(index), Qt::EditRole);
+        ret = ret && source_->setData(index, cashedData_.value(index), Qt::EditRole);
+        if (ret)
+        {
+            cashedData_.remove(index);
+        }
+        else
+        {
+            qDebug() << "QBinaryDataSourceProxy:: Error on setting data for index:" << index;
+            break;
+        }
     }
 
-    cashedData_.clear();
     reset();
 
-    return true;
+    return ret;
 }
 
 bool QBinaryDataSourceProxy::revertChanges()
 {
     Q_ASSERT(source_ != 0);
+
     cashedData_.clear();
     reset();
 
     return true;
 }
-
-//QBinaryDataSourceSelection_List *QBinaryDataSourceProxy::createSelection(const QModelIndex &index)
-//{
-//    Q_ASSERT(source_ != 0);
-//    return source_->createSelection(index);
-//}
-
-//QBinaryDataSourceSelection_Range *QBinaryDataSourceProxy::createSelection(const QModelIndex &begin, const QModelIndex &end)
-//{
-//    Q_ASSERT(source_ != 0);
-//    return source_->createSelection(begin, end);
-//}

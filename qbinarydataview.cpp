@@ -76,7 +76,7 @@ void QBinaryDataView::focusOutEvent(QFocusEvent * event)
 void QBinaryDataView::keyPressEvent(QKeyEvent * event)
 {
     Q_ASSERT(viewport_);
-    if (viewport_->isSupportedKeyEvent(event))
+    if (viewport_->isSupportedKeyPressEvent(event))
     {
         viewport_->keyPressEvent(event);
     }
@@ -89,8 +89,14 @@ void QBinaryDataView::keyPressEvent(QKeyEvent * event)
 void QBinaryDataView::keyReleaseEvent(QKeyEvent * event)
 {
     Q_ASSERT(viewport_);
-
-    viewport_->keyReleaseEvent(event);
+    if (viewport_->isSupportedKeyReleaseEvent(event))
+    {
+        viewport_->keyReleaseEvent(event);
+    }
+    else
+    {
+        QAbstractScrollArea::keyReleaseEvent(event);
+    }
 }
 
 void QBinaryDataView::gotoAddress(quint64 pos)

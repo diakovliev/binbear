@@ -36,9 +36,6 @@ public:
         return po >= po1 && po <= po2;
     }
 
-//    virtual QBinaryDataSourceSelection_List *createSelection(const QModelIndex &index) = 0;
-//    virtual QBinaryDataSourceSelection_Range *createSelection(const QModelIndex &begin, const QModelIndex &end) = 0;
-
 signals:
     
 public slots:

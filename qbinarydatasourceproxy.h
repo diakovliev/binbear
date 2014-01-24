@@ -40,11 +40,9 @@ public:
     bool commitChanges();
     bool revertChanges();
 
-//    QBinaryDataSourceSelection_List *createSelection(const QModelIndex &index);
-//    QBinaryDataSourceSelection_Range *createSelection(const QModelIndex &begin, const QModelIndex &end);
-
 signals:
-    
+    void dataChanged(const QModelIndex &index);
+
 public slots:
 
 private:
