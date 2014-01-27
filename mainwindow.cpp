@@ -29,6 +29,8 @@ MainWindow::MainWindow(QWidget *parent)
     //--------------------------------------------
     //connect(ui->action_Open, SIGNAL(triggered()), this, SLOT(on_action_Open_triggered()));
 
+    connect(ui->actionAbout_Qt, SIGNAL(triggered()), QApplication::instance(), SLOT(aboutQt()));
+
     readSettings();
 
     QStringList args = QCoreApplication::arguments();
@@ -46,16 +48,16 @@ void MainWindow::setupStatusBar()
 {
     statusLabel_ = new QLabel(ui->statusBar);
     addressLabel_ = new QLabel(ui->statusBar);
-    fileStatusLabel_ = new QLabel(ui->statusBar);
+    //fileStatusLabel_ = new QLabel(ui->statusBar);
 
     addressLabel_->setFrameStyle(QFrame::Panel | QFrame::Sunken);
     addressLabel_->setMinimumWidth(100);
-    fileStatusLabel_->setFrameStyle(QFrame::Panel | QFrame::Sunken);
-    fileStatusLabel_->setMinimumWidth(100);
+    //fileStatusLabel_->setFrameStyle(QFrame::Panel | QFrame::Sunken);
+    //fileStatusLabel_->setMinimumWidth(100);
 
     ui->statusBar->insertWidget(-1, statusLabel_, 1);
     ui->statusBar->insertWidget(-1, addressLabel_, 0);
-    ui->statusBar->insertWidget(-1, fileStatusLabel_, 0);
+    //ui->statusBar->insertWidget(-1, fileStatusLabel_, 0);
 }
 
 void MainWindow::on_Copy_As_ActionTriggered()

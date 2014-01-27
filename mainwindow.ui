@@ -49,7 +49,6 @@
      <string>&amp;File</string>
     </property>
     <addaction name="action_Open"/>
-    <addaction name="action_Create"/>
     <addaction name="separator"/>
     <addaction name="action_Quit"/>
    </widget>
@@ -57,7 +56,6 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
-    <addaction name="action_About"/>
     <addaction name="actionAbout_Qt"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
