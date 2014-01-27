@@ -3,7 +3,8 @@
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QSettings>
-#include <QCoreApplication>
+#include <QApplication>
+#include <QClipboard>
 
 #include "binbear.h"
 #include "mainwindow.h"
@@ -12,16 +13,18 @@
 #include "qbinarydatasource.h"
 #include "qbinarydatasourceproxy.h"
 
-#include "qbinarydataformatter_cxxarray.h"
+#include "qbinarydataformatsfactory.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
     , currentFile_(0)
     , currentDS_(0)
+    , activeSelection_()
 {    
     ui->setupUi(this);
     setupStatusBar();
+    initCopyAsActions();
 
     //--------------------------------------------
     //connect(ui->action_Open, SIGNAL(triggered()), this, SLOT(on_action_Open_triggered()));
@@ -53,6 +56,50 @@ void MainWindow::setupStatusBar()
     ui->statusBar->insertWidget(-1, statusLabel_, 1);
     ui->statusBar->insertWidget(-1, addressLabel_, 0);
     ui->statusBar->insertWidget(-1, fileStatusLabel_, 0);
+}
+
+void MainWindow::on_Copy_As_ActionTriggered()
+{
+    QAction *action = qobject_cast<QAction *>(sender());
+    if (action)
+    {
+        QVariant formatter_id = action->property("formatter_id");
+        QAbstractBinaryDataFormatter *formatter =
+                QBinaryDataFormatsFactory::createFormatter((QBinaryDataFormatsFactory::Formatters)formatter_id.toInt(),
+                                                           ui->binaryDataView->dataSource());
+        if (formatter)
+        {
+            QByteArray formattedData = formatter->format(activeSelection_.begin, activeSelection_.end);
+            qDebug() << QString::fromAscii(formattedData);
+
+            QClipboard *clipboard = QApplication::clipboard();
+            clipboard->setText(QString::fromAscii(formattedData));
+
+            delete formatter;
+        }
+    }
+}
+
+void MainWindow::initCopyAsActions()
+{
+    QMap<QBinaryDataFormatsFactory::Formatters, QString> formats = QBinaryDataFormatsFactory::supportedFormats();
+    foreach(QBinaryDataFormatsFactory::Formatters fmt, formats.keys())
+    {
+        QAction *action = ui->menuCopy_As->addAction(formats[fmt]);
+        action->setEnabled(false);
+        action->setProperty("formatter_id", fmt);
+
+        connect(action, SIGNAL(triggered()), this, SLOT(on_Copy_As_ActionTriggered()));
+    }
+}
+
+void MainWindow::controlCopyAsActions(bool enable)
+{
+    QList<QAction *> actions = ui->menuCopy_As->actions();
+    foreach(QAction *action, actions)
+    {
+        action->setEnabled(enable);
+    }
 }
 
 void MainWindow::readSettings()
@@ -115,6 +162,7 @@ void MainWindow::closeCurrentFile()
     ui->actionCommit_changes->setEnabled(false);
     ui->actionRevert_changes->setEnabled(false);
 
+    controlCopyAsActions(false);
     setWindowTitle(APP_NAME);
 
     disconnect(ui->binaryDataView->viewport(), SIGNAL(Cursor_positionChanged(const QModelIndex &, const QModelIndex &)));
@@ -140,6 +188,8 @@ void MainWindow::closeCurrentFile()
 
 void MainWindow::on_viewport_Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current)
 {
+    Q_UNUSED(prev);
+
     addressLabel_->setText(QString().sprintf("0x%08X", (int)currentDS_->indexToOffset(current)));
 }
 
@@ -148,17 +198,23 @@ void MainWindow::on_viewport_Cursor_selectionDone(const QModelIndex &begin, cons
     quint64 b = currentDS_->indexToOffset(begin);
     quint64 e = currentDS_->indexToOffset(end);
 
+    activeSelection_.begin  = begin;
+    activeSelection_.end    = end;
+
+    controlCopyAsActions(true);
+
     statusLabel_->setText(QString()
         .sprintf("0x%08X - 0x%08X (%ld)", (int)b, (int)e, e-b+1));
-
-    QBinaryDataFormatter_CxxArray formatter("test_array", ui->binaryDataView->dataSource());
-
-    qDebug() << QString::fromAscii(formatter.format(begin, end));
 }
 
 void MainWindow::on_viewport_Cursor_selectionCanceled()
 {
     statusLabel_->setText(QString());
+
+    activeSelection_.begin  = QModelIndex();
+    activeSelection_.end    = QModelIndex();
+
+    controlCopyAsActions(false);
 }
 
 void MainWindow::openFile(const QString &fileName)

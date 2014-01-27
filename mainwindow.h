@@ -27,6 +27,9 @@ protected:
 
     void setupStatusBar();
 
+    void initCopyAsActions();
+    void controlCopyAsActions(bool enable);
+
 public slots:
     void on_action_gotoAddress_triggered();
     void on_action_commitChanges_triggered();
@@ -37,6 +40,8 @@ public slots:
     void on_viewport_Cursor_positionChanged(const QModelIndex &prev, const QModelIndex &current);
     void on_viewport_Cursor_selectionDone(const QModelIndex &begin, const QModelIndex &end);
     void on_viewport_Cursor_selectionCanceled();
+
+    void on_Copy_As_ActionTriggered();
 
 signals:
 
@@ -50,6 +55,11 @@ private:
     QLabel *statusLabel_;
     QLabel *addressLabel_;
     QLabel *fileStatusLabel_;
+
+    struct {
+        QModelIndex begin;
+        QModelIndex end;
+    } activeSelection_;
 
 };
 

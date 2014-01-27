@@ -64,10 +64,18 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
+    <widget class="QMenu" name="menuCopy_As">
+     <property name="title">
+      <string>Copy as</string>
+     </property>
+     <addaction name="separator"/>
+    </widget>
     <addaction name="actionGoto_address"/>
     <addaction name="separator"/>
     <addaction name="actionCommit_changes"/>
     <addaction name="actionRevert_changes"/>
+    <addaction name="separator"/>
+    <addaction name="menuCopy_As"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>

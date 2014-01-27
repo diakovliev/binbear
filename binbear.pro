@@ -11,7 +11,11 @@ SOURCES += main.cpp \
     qbinarydatasourceproxy.cpp \
     qabstractbinarydatasource.cpp \
     qabstractbinarydataformatter.cpp \
-    qbinarydataformatter_cxxarray.cpp
+    qbinarydataformatter_cxxarray.cpp \
+    qbinarydataformatter_base64.cpp \
+    qbinarydataformatter_raw.cpp \
+    qbinarydataformatter_hex.cpp \
+    qbinarydataformatsfactory.cpp
 HEADERS += mainwindow.h \
     qbinarydatasource.h \
     qbinarydataview.h \
@@ -20,5 +24,9 @@ HEADERS += mainwindow.h \
     qbinarydatasourceproxy.h \
     qabstractbinarydatasource.h \
     qabstractbinarydataformatter.h \
-    qbinarydataformatter_cxxarray.h
+    qbinarydataformatter_cxxarray.h \
+    qbinarydataformatter_base64.h \
+    qbinarydataformatter_raw.h \
+    qbinarydataformatter_hex.h \
+    qbinarydataformatsfactory.h
 FORMS += mainwindow.ui

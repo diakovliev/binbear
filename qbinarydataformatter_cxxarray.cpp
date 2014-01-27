@@ -2,9 +2,9 @@
 
 #include "qbinarydataformatter_cxxarray.h"
 
-QBinaryDataFormatter_CxxArray::QBinaryDataFormatter_CxxArray(const QString &name, QAbstractBinaryDataSource *source)
+QBinaryDataFormatter_CxxArray::QBinaryDataFormatter_CxxArray(QAbstractBinaryDataSource *source)
     : QAbstractBinaryDataFormatter(source)
-    , name_(name)
+    , name_("__To_Rename__")
 {   
 }
 

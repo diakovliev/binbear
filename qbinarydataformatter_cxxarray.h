@@ -8,7 +8,7 @@ class QBinaryDataFormatter_CxxArray : public QAbstractBinaryDataFormatter
 public:
     enum { LINE_WIDTH = 10 };
 
-    QBinaryDataFormatter_CxxArray(const QString &name, QAbstractBinaryDataSource *source);
+    QBinaryDataFormatter_CxxArray(QAbstractBinaryDataSource *source);
     virtual ~QBinaryDataFormatter_CxxArray();
 
     /* Format whole data from the source */
