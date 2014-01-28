@@ -4,6 +4,7 @@
 #include <QDebug>
 
 #include "qbinarydatasourceproxy.h"
+#include "qbinarydatasourceproxy_colorscheme.h"
 #include "qbinarydatasource.h"
 
 QBinaryDataSourceProxy::QBinaryDataSourceProxy(QBinaryDataSource *source)
@@ -70,22 +71,27 @@ QVariant QBinaryDataSourceProxy::data(const QModelIndex &index, int role) const
 {
     Q_ASSERT(source_ != 0);
 
-    if ( (role == Qt::DisplayRole || role == Qt::EditRole || role == Qt::BackgroundRole) && cashedData_.contains(index))
+    QBinaryDataSourceProxy_ColorScheme colorScheme(source_);
+    if (role == Qt::BackgroundRole)
     {
-        if (role == Qt::BackgroundRole)
+        if (cashedData_.contains(index))
         {
             // Change background for changed values
-            QStyle *currentStyle = QApplication::style();
-            QPalette currentPalette = currentStyle->standardPalette();
+//            QStyle *currentStyle = QApplication::style();
+//            QPalette currentPalette = currentStyle->standardPalette();
 
-            QColor result = currentPalette.color(QPalette::Window);
-            return result;
-
+//            QColor result = currentPalette.color(QPalette::Window);
+//            return result;
+            return colorScheme.changedColor(index);
         }
         else
         {
-            return cashedData_.value(index);
+            return colorScheme.color(index);
         }
+    }
+    else if ((role == Qt::DisplayRole || role == Qt::EditRole) && cashedData_.contains(index))
+    {
+        return cashedData_.value(index);
     }
     else
     {

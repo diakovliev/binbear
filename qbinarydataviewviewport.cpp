@@ -420,34 +420,71 @@ QList<ViewportItemData> QBinaryDataViewViewport::getDataToRender(int rowsPerScre
 
   */
 
-void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect, const ViewportItemData &itemData)
+void QBinaryDataViewViewport::Cursor_paint(QPainter &painter)
 {
     TRACE_IN;
 
-    QStyle *currentStyle = style();
-    QPalette currentPalette = currentStyle->standardPalette();
+    // {{ CURSOR paint
+    if (!currentCursorInputBuffer_.isEmpty())
+    {
+        QString presentation = QString::fromAscii(currentCursorInputBuffer_);
+        if (presentation.length() == 1)
+            presentation.append("_");
+        currentCursorItemData_[Qt::DisplayRole] = presentation;
+    }
 
-    QBrush highlight = currentPalette.brush(QPalette::Highlight);
-    QColor highlightedText = currentPalette.color(QPalette::HighlightedText);
+    QRect itemRect = currentCursorItemData_[ViewportRect].toRect();
+    int alignment  = currentCursorItemData_[Qt::TextAlignmentRole].toUInt();
+    QString out    = currentCursorItemData_[Qt::DisplayRole].toString();
+
+    QBrush highlight        = style()->standardPalette().brush(QPalette::Highlight);
+    QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
+
+    painter.setCompositionMode(QPainter::CompositionMode_HardLight);
+    painter.setPen(highlightedText);
+
+    painter.fillRect(itemRect, highlight);
+    painter.drawText(itemRect,
+                     alignment,
+                     out);
+
+    // }} CURSOR
+
+    TRACE_OUT;
+}
+
+void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect, const ViewportItemData &itemData)
+{
+    TRACE_IN;
 
 #if DEBUG_GEOMETRY >= 1
     painter.drawRect(itemRect);
 #endif/**/
 
-    QString out = itemData[Qt::DisplayRole].toString();
-    int alignment = itemData[Qt::TextAlignmentRole].toUInt();
+    QString out     = itemData[Qt::DisplayRole].toString();
+    int alignment   = itemData[Qt::TextAlignmentRole].toUInt();
 
     // Changed data
     QModelIndex index = dataSource_->index(itemData[RowIndex].toInt(), itemData[ColumnIndex].toInt());
     if (index.isValid())
     {
+        QVariant bg = dataSource_->data(index, Qt::BackgroundRole);
+        if (!bg.isNull())
+        {
+            painter.fillRect(itemRect, bg.value<QColor>());
+        }
+
         if (index != currentCursorPosition_)
         {
+            QBrush highlight        = style()->standardPalette().brush(QPalette::Highlight);
+
             if (currentCursorMode_ == Selection)
             {
                 if (dataSource_->indexInRange(index, savedCursorPosition_, currentCursorPosition_))
                 {
-                    painter.setBackground(highlight);
+                    QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
+
+                    painter.fillRect(itemRect, highlight);
                     painter.setPen(highlightedText);
                 }
             }
@@ -455,21 +492,15 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
             {
                 if (dataSource_->indexInRange(index, currentSelection_.pos1, currentSelection_.pos2))
                 {
-                    painter.setBackground(highlight);
+                    QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
+
+                    painter.fillRect(itemRect, highlight);
                     painter.setPen(highlightedText);
                 }
             }
         }
-
-        QVariant bg = dataSource_->data(index, Qt::BackgroundRole);
-        if (!bg.isNull())
-        {
-            QBrush background(bg.value<QColor>());
-            painter.setBackground(background);
-        }
     }
 
-    painter.fillRect(itemRect, painter.background());
     painter.drawText(itemRect,
                      alignment,
                      out);
@@ -1061,38 +1092,6 @@ void QBinaryDataViewViewport::Cursor_setItemVisibility(const ViewportItemData &i
         currentCursorItemData_              = itemData;
         currentCursorItemData_[ItemVisible] = true;
     }
-}
-
-void QBinaryDataViewViewport::Cursor_paint(QPainter &painter)
-{
-    TRACE_IN;
-
-    if (!currentCursorInputBuffer_.isEmpty())
-    {
-        QString presentation = QString::fromAscii(currentCursorInputBuffer_);
-        if (presentation.length() == 1)
-            presentation.append("_");
-        currentCursorItemData_[Qt::DisplayRole] = presentation;
-    }
-
-    // {{ CURSOR paint
-    QStyle *currentStyle = style();
-    QPalette currentPalette = currentStyle->standardPalette();
-
-    QRect itemRect = currentCursorItemData_[ViewportRect].toRect();
-
-    QBrush highlight        = currentPalette.brush(QPalette::Highlight);
-    QColor highlightedText  = currentPalette.color(QPalette::HighlightedText);
-
-    painter.setCompositionMode(QPainter::CompositionMode_HardLight);
-
-    painter.setBackground(highlight);
-    painter.setPen(highlightedText);
-
-    paintItem(painter, itemRect, currentCursorItemData_);
-    // }} CURSOR
-
-    TRACE_OUT;
 }
 
 void QBinaryDataViewViewport::Cursor_moveToIndex(const QModelIndex& index)

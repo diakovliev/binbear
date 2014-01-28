@@ -54,7 +54,7 @@ private:
     // status bar
     QLabel *statusLabel_;
     QLabel *addressLabel_;
-    QLabel *fileStatusLabel_;
+    //QLabel *fileStatusLabel_;
 
     struct {
         QModelIndex begin;

@@ -3,7 +3,6 @@
 
 #include "qabstractbinarydatasource.h"
 
-class QBinaryDataInterpretation;
 class QBinaryDataSourceProxy;
 
 class QBinaryDataSource : public QAbstractBinaryDataSource
@@ -16,10 +15,6 @@ public:
     /* IO source */
     void attachTo(QIODevice *input);
     QIODevice *detachFrom(void);
-
-    /* Data interpretation */
-    void setInterpretation(QBinaryDataInterpretation *interptretation);
-    QBinaryDataInterpretation *interpretation() const;
 
     /* QAbstractItemModel */
     QModelIndex parent(const QModelIndex &index) const;

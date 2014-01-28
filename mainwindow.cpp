@@ -184,7 +184,7 @@ void MainWindow::closeCurrentFile()
 
         statusLabel_->clear();
         addressLabel_->clear();
-        fileStatusLabel_->clear();
+        //fileStatusLabel_->clear();
     }
 }
 

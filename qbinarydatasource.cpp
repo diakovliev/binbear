@@ -290,18 +290,6 @@ Qt::ItemFlags QBinaryDataSource::flags(const QModelIndex &index) const
 }
 
 /******************************************************************************/
-void QBinaryDataSource::setInterpretation(QBinaryDataInterpretation *interptretation)
-{
-    Q_UNUSED(interptretation);
-}
-
-/******************************************************************************/
-QBinaryDataInterpretation *QBinaryDataSource::interpretation() const
-{
-    return 0;
-}
-
-/******************************************************************************/
 QBinaryDataSourceProxy *QBinaryDataSource::createProxy()
 {
     return new QBinaryDataSourceProxy(this);
