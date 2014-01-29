@@ -468,10 +468,12 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
     QModelIndex index = dataSource_->index(itemData[RowIndex].toInt(), itemData[ColumnIndex].toInt());
     if (index.isValid())
     {
+        QRect adjusted = itemRect.adjusted(-((xmargin_/2)+1),0,(xmargin_/2)+1,0);
+
         QVariant bg = dataSource_->data(index, Qt::BackgroundRole);
         if (!bg.isNull())
         {
-            painter.fillRect(itemRect, bg.value<QColor>());
+            painter.fillRect(adjusted, bg.value<QColor>());
         }
 
         if (index != currentCursorPosition_)
@@ -484,7 +486,7 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
                 {
                     QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
 
-                    painter.fillRect(itemRect, highlight);
+                    painter.fillRect(adjusted, highlight);
                     painter.setPen(highlightedText);
                 }
             }
@@ -494,7 +496,7 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
                 {
                     QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
 
-                    painter.fillRect(itemRect, highlight);
+                    painter.fillRect(adjusted, highlight);
                     painter.setPen(highlightedText);
                 }
             }

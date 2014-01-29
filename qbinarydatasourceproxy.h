@@ -2,6 +2,7 @@
 #define QBINARYDATASOURCEPROXY_H
 
 #include "qabstractbinarydatasource.h"
+#include "qbinarydatasourceproxy_colorscheme.h"
 
 class QBinaryDataSource;
 
@@ -48,6 +49,7 @@ public slots:
 private:
     QBinaryDataSource *source_;
     QMap<QModelIndex, QVariant> cashedData_;
+    QBinaryDataSourceProxy_ColorScheme colorScheme_;
     
 };
 

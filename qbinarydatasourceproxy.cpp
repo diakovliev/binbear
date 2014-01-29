@@ -11,6 +11,7 @@ QBinaryDataSourceProxy::QBinaryDataSourceProxy(QBinaryDataSource *source)
     : QAbstractBinaryDataSource(source)
     , source_(source)
     , cashedData_()
+    , colorScheme_(source)
 {
 }
 
@@ -71,22 +72,15 @@ QVariant QBinaryDataSourceProxy::data(const QModelIndex &index, int role) const
 {
     Q_ASSERT(source_ != 0);
 
-    QBinaryDataSourceProxy_ColorScheme colorScheme(source_);
     if (role == Qt::BackgroundRole)
     {
         if (cashedData_.contains(index))
         {
-            // Change background for changed values
-//            QStyle *currentStyle = QApplication::style();
-//            QPalette currentPalette = currentStyle->standardPalette();
-
-//            QColor result = currentPalette.color(QPalette::Window);
-//            return result;
-            return colorScheme.changedColor(index);
+            return colorScheme_.changedColor(index);
         }
         else
         {
-            return colorScheme.color(index);
+            return colorScheme_.color(index);
         }
     }
     else if ((role == Qt::DisplayRole || role == Qt::EditRole) && cashedData_.contains(index))

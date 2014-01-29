@@ -3,6 +3,7 @@
 # -------------------------------------------------
 TARGET = binbear
 TEMPLATE = app
+QT += core xml
 SOURCES += main.cpp \
     mainwindow.cpp \
     qbinarydatasource.cpp \
