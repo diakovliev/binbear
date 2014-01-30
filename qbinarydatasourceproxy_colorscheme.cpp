@@ -44,9 +44,9 @@ QBinaryDataSourceProxy_ColorScheme::QBinaryDataSourceProxy_ColorScheme(QBinaryDa
     root_.changedcolor  = Qt::gray;
 
     /* TODO: fill test scheme */
-    QByteArray scheme;
-    scheme += TEST_SCHEME;
-    parseScheme(scheme);
+//    QByteArray scheme;
+//    scheme += TEST_SCHEME;
+//    parseScheme(scheme);
 }
 
 void QBinaryDataSourceProxy_ColorScheme::parseChildElement(const QDomElement &element)

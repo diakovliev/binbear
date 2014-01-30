@@ -348,7 +348,7 @@ QBinaryDataViewViewport::CashedData::CashedData()
 
 QList<ViewportItemData> QBinaryDataViewViewport::getDataToRender(int rowsPerScreen)
 {
-    QList<ViewportItemData > dataToRender;
+    QList<ViewportItemData> dataToRender;
     if (!dataSource_)
         return dataToRender;
 
@@ -376,17 +376,18 @@ QList<ViewportItemData> QBinaryDataViewViewport::getDataToRender(int rowsPerScre
         {
             for (int col = 0; col < totalColumnCount_; ++col)
             {
-                QModelIndex index = dataSource_->index(idx,col);
-                QVariant data = dataSource_->data(index,Qt::UserRole);
+                QModelIndex index   = dataSource_->index(idx,col);
+                QVariant data       = dataSource_->data(index,Qt::UserRole);
                 if (!data.isNull())
                 {
                     ViewportItemData itemData = dataSource_->itemData(index);
+
                     QMap<QString,QVariant> userData = data.toMap();
 
-                    itemData[RawData] = userData["char"];
-                    itemData[RawOffset] = userData["pos"];
-                    itemData[RowIndex] = idx;
-                    itemData[ColumnIndex] = col;
+                    itemData[RawData]       = userData["char"];
+                    itemData[RawOffset]     = userData["pos"];
+                    itemData[RowIndex]      = idx;
+                    itemData[ColumnIndex]   = col;
 
                     dataToRender.append(itemData);
                 }
@@ -434,16 +435,35 @@ void QBinaryDataViewViewport::Cursor_paint(QPainter &painter)
     }
 
     QRect itemRect = currentCursorItemData_[ViewportRect].toRect();
+
+#if DEBUG_GEOMETRY >= 1
+    painter.drawRect(itemRect);
+#endif/**/
+
     int alignment  = currentCursorItemData_[Qt::TextAlignmentRole].toUInt();
     QString out    = currentCursorItemData_[Qt::DisplayRole].toString();
+    QVariant bg    = currentCursorItemData_[Qt::BackgroundRole];
 
-    QBrush highlight        = style()->standardPalette().brush(QPalette::Highlight);
-    QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
+    QRect adjusted = itemRect.adjusted(-((xmargin_/2)+1),0,(xmargin_/2)+1,0);
+
+#if DEBUG_GEOMETRY >= 1
+    painter.drawRect(adjusted);
+#endif/**/
+
+    if (!bg.isNull())
+    {
+        painter.fillRect(adjusted, bg.value<QColor>());
+    }
+    else
+    {
+        painter.fillRect(adjusted, style()->standardPalette().color(QPalette::Base));
+    }
 
     painter.setCompositionMode(QPainter::CompositionMode_HardLight);
-    painter.setPen(highlightedText);
 
-    painter.fillRect(itemRect, highlight);
+    painter.setPen(style()->standardPalette().color(QPalette::HighlightedText));
+    painter.fillRect(itemRect, style()->standardPalette().brush(QPalette::Highlight));
+
     painter.drawText(itemRect,
                      alignment,
                      out);
@@ -463,42 +483,46 @@ void QBinaryDataViewViewport::paintItem(QPainter &painter, const QRect &itemRect
 
     QString out     = itemData[Qt::DisplayRole].toString();
     int alignment   = itemData[Qt::TextAlignmentRole].toUInt();
+    QVariant bg     = itemData[Qt::BackgroundRole];
 
-    // Changed data
-    QModelIndex index = dataSource_->index(itemData[RowIndex].toInt(), itemData[ColumnIndex].toInt());
-    if (index.isValid())
+    QRect adjusted = itemRect.adjusted(-((xmargin_/2)+1),0,(xmargin_/2)+1,0);
+
+#if DEBUG_GEOMETRY >= 1
+    painter.drawRect(adjusted);
+#endif/**/
+
+    if (!bg.isNull())
     {
-        QRect adjusted = itemRect.adjusted(-((xmargin_/2)+1),0,(xmargin_/2)+1,0);
+        painter.fillRect(adjusted, bg.value<QColor>());
+    }
+    else
+    {
+        painter.fillRect(adjusted, style()->standardPalette().color(QPalette::Base));
+    }
 
-        QVariant bg = dataSource_->data(index, Qt::BackgroundRole);
-        if (!bg.isNull())
+    QModelIndex index = dataSource_->index(itemData[RowIndex].toInt(), itemData[ColumnIndex].toInt());
+    if (index.isValid() && index != currentCursorPosition_)
+    {
+        QBrush highlight        = style()->standardPalette().brush(QPalette::Highlight);
+
+        if (currentCursorMode_ == Selection)
         {
-            painter.fillRect(adjusted, bg.value<QColor>());
-        }
-
-        if (index != currentCursorPosition_)
-        {
-            QBrush highlight        = style()->standardPalette().brush(QPalette::Highlight);
-
-            if (currentCursorMode_ == Selection)
+            if (dataSource_->indexInRange(index, savedCursorPosition_, currentCursorPosition_))
             {
-                if (dataSource_->indexInRange(index, savedCursorPosition_, currentCursorPosition_))
-                {
-                    QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
+                QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
 
-                    painter.fillRect(adjusted, highlight);
-                    painter.setPen(highlightedText);
-                }
+                painter.fillRect(adjusted, highlight);
+                painter.setPen(highlightedText);
             }
-            else
+        }
+        else
+        {
+            if (dataSource_->indexInRange(index, currentSelection_.pos1, currentSelection_.pos2))
             {
-                if (dataSource_->indexInRange(index, currentSelection_.pos1, currentSelection_.pos2))
-                {
-                    QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
+                QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
 
-                    painter.fillRect(adjusted, highlight);
-                    painter.setPen(highlightedText);
-                }
+                painter.fillRect(adjusted, highlight);
+                painter.setPen(highlightedText);
             }
         }
     }
@@ -605,7 +629,7 @@ QRegion QBinaryDataViewViewport::calculatePresentationBarRegion(QPainter &painte
     {
         for (int i = 0; i < columnCnt; ++i) testString.append("W");
     }
-    testString.append("WW");
+    testString.append("W");
 
     QRect boundingRect = painter.boundingRect(wrect,0,testString);
     boundingRect.setLeft(wrect.right() - boundingRect.width());
@@ -621,13 +645,10 @@ void QBinaryDataViewViewport::paintPresenationBar(QPainter &painter, const QStri
 {
     TRACE_IN;
 
-    QStyle *currentStyle = style();
-    QPalette currentPalette = currentStyle->standardPalette();
+    QBrush highlight        = style()->standardPalette().brush(QPalette::Highlight);
+    QColor highlightedText  = style()->standardPalette().color(QPalette::HighlightedText);
 
-    QBrush highlight = currentPalette.brush(QPalette::Highlight);
-    QColor highlightedText = currentPalette.color(QPalette::HighlightedText);
-
-    painter.fillRect(painter.clipBoundingRect(),currentPalette.brush(QPalette::Window));
+    painter.fillRect(painter.clipBoundingRect(),style()->standardPalette().brush(QPalette::Window));
 
     int x = 0,y = 0;
     for (int i = 0; i < presenations.count(); ++i) {
@@ -635,6 +656,7 @@ void QBinaryDataViewViewport::paintPresenationBar(QPainter &painter, const QStri
         x = xmargin_ + painter.clipBoundingRect().left();
 
         QRect itemRect = QRect(x,y,painter.clipBoundingRect().width(),cy_);
+        itemRect = itemRect.adjusted(-xmargin_,0,0,0);
 
 #if DEBUG_GEOMETRY >= 1
         painter.drawRect(itemRect);
@@ -643,15 +665,34 @@ void QBinaryDataViewViewport::paintPresenationBar(QPainter &painter, const QStri
         painter.save();
         if (currentCursorPosition_.row() == i + topRow_)
         {
-            QRect tempRect = itemRect;
-            tempRect.adjust(-xmargin_,0,0,0);
-            painter.fillRect(tempRect,highlight);
+            painter.fillRect(itemRect,highlight);
             painter.setPen(highlightedText);
         }
 
-        painter.drawText(itemRect,
-                         Qt::AlignLeft | Qt::AlignVCenter,
-                         presenations[i]);
+        itemRect = itemRect.adjusted(xmargin_,0,-xmargin_,0);
+        QString line = presenations[i];
+        int j = 0;
+        foreach(QChar ch, line)
+        {
+            int w = itemRect.width() / dataSource_->viewWidth();
+            QRect chRect(itemRect.x() + j*w, itemRect.y(), w, itemRect.height());
+
+#if DEBUG_GEOMETRY >= 1
+            painter.drawRect(chRect);
+#endif/**/
+            if (currentCursorPosition_.column() == j &&
+                currentCursorPosition_.row() == (i + topRow_))
+            {
+                painter.drawRect(chRect);
+            }
+
+            painter.drawText(chRect,
+                             Qt::AlignCenter | Qt::AlignVCenter,
+                             ch);
+
+            ++j;
+        }
+
         painter.restore();
 
         //qDebug("x:%d y: %d presentation[%d]: %s", x, y, i, qPrintable(presenations[i]));
@@ -763,7 +804,6 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
                 }
 
                 /* collecting raw data */
-                //QChar ch = itemData[RawData].toChar();
                 int i = itemData[Qt::DisplayRole].toString().toInt(0, 16);
                 QChar ch = QChar::fromLatin1(i);
                 rawViewData.append(ch.isPrint()?ch:NOT_PRINTABLE_ITEM);
@@ -1170,7 +1210,8 @@ void QBinaryDataViewViewport::Cursor_updatePositionByMouseEvent(QMouseEvent * ev
 
     QList<ViewportItemData>::const_iterator iter = dataOnTheScreen_.constBegin();
     while (iter != dataOnTheScreen_.constEnd()) {
-        QRegion itemRegion = (*iter)[ViewportRect].toRect();
+        QRect itemRect = (*iter)[ViewportRect].toRect();
+        QRegion itemRegion = itemRect.adjusted(-((xmargin_/2)+1),0,(xmargin_/2)+1,0);
         if (itemRegion.contains(event->pos()))
         {
             QModelIndex prev = currentCursorPosition_;

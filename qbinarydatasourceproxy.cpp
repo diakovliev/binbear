@@ -11,13 +11,12 @@ QBinaryDataSourceProxy::QBinaryDataSourceProxy(QBinaryDataSource *source)
     : QAbstractBinaryDataSource(source)
     , source_(source)
     , cashedData_()
-    , colorScheme_(source)
-{
+    , colorScheme_(0)
+{    
 }
 
 QBinaryDataSourceProxy::~QBinaryDataSourceProxy()
 {
-
 }
 
 QModelIndex QBinaryDataSourceProxy::parent(const QModelIndex &index) const
@@ -68,19 +67,45 @@ quint8 QBinaryDataSourceProxy::viewWidth(void) const
     return source_->viewWidth();
 }
 
+void QBinaryDataSourceProxy::setColorScheme(QBinaryDataSourceProxy_ColorScheme *colorScheme)
+{
+    Q_ASSERT(source_ != 0);
+
+    if (colorScheme_ != colorScheme)
+    {
+        colorScheme_ = colorScheme;
+
+        reset();
+    }
+}
+
+QBinaryDataSourceProxy_ColorScheme *QBinaryDataSourceProxy::colorScheme() const
+{
+    Q_ASSERT(source_ != 0);
+
+    return colorScheme_;
+}
+
 QVariant QBinaryDataSourceProxy::data(const QModelIndex &index, int role) const
 {
     Q_ASSERT(source_ != 0);
 
     if (role == Qt::BackgroundRole)
     {
-        if (cashedData_.contains(index))
+        if (colorScheme_)
         {
-            return colorScheme_.changedColor(index);
+            if (cashedData_.contains(index))
+            {
+                return colorScheme_->changedColor(index);
+            }
+            else
+            {
+                return colorScheme_->color(index);
+            }
         }
         else
         {
-            return colorScheme_.color(index);
+            return QVariant();
         }
     }
     else if ((role == Qt::DisplayRole || role == Qt::EditRole) && cashedData_.contains(index))

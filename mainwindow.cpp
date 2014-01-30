@@ -175,6 +175,19 @@ void MainWindow::closeCurrentFile()
     if (ui->binaryDataView->dataSource() != 0)
     {
         ui->binaryDataView->setDataSource(0);
+
+        QBinaryDataSourceProxy *proxy = qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
+        if (proxy)
+        {
+            QBinaryDataSourceProxy_ColorScheme *colorScheme = proxy->colorScheme();
+            if (colorScheme)
+            {
+                proxy->setColorScheme(0);
+                delete colorScheme;
+            }
+            delete proxy;
+        }
+
         currentDS_->detachFrom();
         currentFile_->close();
         delete currentFile_;
@@ -245,7 +258,12 @@ void MainWindow::openFile(const QString &fileName)
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionCanceled())
                 , this, SLOT(on_viewport_Cursor_selectionCanceled()));
 
-        ui->binaryDataView->setDataSource(currentDS_->createProxy());
+        QBinaryDataSourceProxy *proxy = currentDS_->createProxy();
+
+        QBinaryDataSourceProxy_ColorScheme *colorScheme= new QBinaryDataSourceProxy_ColorScheme(currentDS_);
+        proxy->setColorScheme(colorScheme);
+
+        ui->binaryDataView->setDataSource(proxy);
 
         connect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
         connect(ui->actionCommit_changes, SIGNAL(triggered()), this, SLOT(on_action_commitChanges_triggered()));
@@ -254,7 +272,6 @@ void MainWindow::openFile(const QString &fileName)
         ui->actionGoto_address->setEnabled(true);
         ui->actionCommit_changes->setEnabled(true);
         ui->actionRevert_changes->setEnabled(true);
-
 
         settings.setValue("MainWindow/lastFile", fileName);
         setWindowTitle(QString("%1 <%2>").arg(APP_NAME).arg(QFileInfo(fileName).fileName()));
