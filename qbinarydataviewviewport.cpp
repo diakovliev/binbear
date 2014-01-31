@@ -576,13 +576,7 @@ void QBinaryDataViewViewport::paintAddressBar(QPainter &painter, const QStringLi
 {
     TRACE_IN;
 
-    QStyle *currentStyle = style();
-    QPalette currentPalette = currentStyle->standardPalette();
-
-    QBrush highlight = currentPalette.brush(QPalette::Highlight);
-    QColor highlightedText = currentPalette.color(QPalette::HighlightedText);
-
-    painter.fillRect(painter.clipBoundingRect(),currentPalette.brush(QPalette::Window));
+    painter.fillRect(painter.clipBoundingRect(),style()->standardPalette().brush(QPalette::Window));
 
     int x = 0,y = 0;
     for (int i = 0; i < addresses.count(); ++i) {
@@ -600,8 +594,8 @@ void QBinaryDataViewViewport::paintAddressBar(QPainter &painter, const QStringLi
         painter.save();
         if (currentCursorPosition_.row() == i + topRow_)
         {
-            painter.fillRect(itemRect,highlight);
-            painter.setPen(highlightedText);
+            painter.fillRect(itemRect,style()->standardPalette().brush(QPalette::Highlight));
+            painter.setPen(style()->standardPalette().color(QPalette::HighlightedText));
             address += QString().sprintf("+%02X", currentCursorPosition_.column()
                                           % totalColumnCount_);
         }
@@ -709,8 +703,7 @@ void QBinaryDataViewViewport::paintViewport(QPainter &painter,
 {
     TRACE_IN;
 
-    QStyle *currentStyle = style();
-    QPalette currentPalette = currentStyle->standardPalette();
+    QPalette currentPalette = style()->standardPalette();
 
     painter.setBackground(currentPalette.base());
 

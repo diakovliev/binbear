@@ -44,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    currentColorScheme_ = 0;
     qDeleteAll(colorSchemas_);
     delete ui;
 }
@@ -110,6 +111,7 @@ void MainWindow::controlCopyAsActions(bool enable)
 
 void MainWindow::initColorSchemeActions()
 {
+    currentColorScheme_ = 0;
     qDeleteAll(colorSchemas_);
 
     QDir dir(":/color_schemas");
@@ -119,8 +121,6 @@ void MainWindow::initColorSchemeActions()
     {
         QAction *action = ui->menuColor_scheme->addAction(scheme->name());
         action->setEnabled(true);
-        //action->setCheckable(true);
-        //action->setChecked(false);
         action->setProperty("scheme_id", i++);
 
         connect(action, SIGNAL(triggered()), this, SLOT(on_Color_Scheme_ActionTriggered()));
@@ -132,8 +132,6 @@ void MainWindow::on_Color_Scheme_ActionTriggered()
     QAction *action = qobject_cast<QAction*>(sender());
     if (!action) return;
 
-    bool actionChecked = action->isChecked();
-
     QList<QAction *> actions = ui->menuColor_scheme->actions();
     foreach(QAction *action, actions)
     {
@@ -144,7 +142,9 @@ void MainWindow::on_Color_Scheme_ActionTriggered()
     QVariant scheme_id = action->property("scheme_id");
     if (!scheme_id.isNull())
     {
-        QAbstractBinaryDataSource *dataSource = qobject_cast<QAbstractBinaryDataSource*>(ui->binaryDataView->dataSource());
+        QAbstractBinaryDataSource *dataSource =
+                qobject_cast<QAbstractBinaryDataSource*>(ui->binaryDataView->dataSource());
+
         QBinaryDataColorScheme *scheme = colorSchemas_.at(scheme_id.toInt());
         if (currentColorScheme_ != scheme)
         {
