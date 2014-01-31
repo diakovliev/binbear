@@ -2,10 +2,12 @@
 #define QBINARYDATASOURCEPROXY_COLORSCHEME_H
 
 #include <QColor>
-#include <QDomElement>
-#include "qbinarydatasource.h"
+#include <QModelIndex>
 
-class QBinaryDataSourceProxy_ColorScheme
+class QDomElement;
+class QAbstractBinaryDataSource;
+
+class QBinaryDataColorScheme
 {
 protected:
     struct Element {
@@ -17,24 +19,25 @@ protected:
     };
 
 public:
-    QBinaryDataSourceProxy_ColorScheme(QBinaryDataSource *source);
+    QBinaryDataColorScheme();
 
-    QString name(const QModelIndex &index) const;
-    QString descrition(const QModelIndex &index) const;
-    QColor color(const QModelIndex &index) const;
-    QColor changedColor(const QModelIndex &index) const;
+    QString name(const QModelIndex &index = QModelIndex()) const;
+    QString descrition(const QModelIndex &index = QModelIndex()) const;
+    QColor color(const QModelIndex &index = QModelIndex()) const;
+    QColor changedColor(const QModelIndex &index = QModelIndex()) const;
 
     bool parseScheme(const QByteArray &xmlDocument);
+    void setDataSource(QAbstractBinaryDataSource *source);
 
 protected:
     Element findElementByIndex(const QModelIndex &index) const;
-    void parseChildElement(const QDomElement &element);
+    void parseChildElement(QDomElement *element);
 
 private:
-    QBinaryDataSource   *source_;
+    QAbstractBinaryDataSource   *source_;
 
-    Element             root_;
-    QList<Element>      childs_;
+    Element                     root_;
+    QList<Element>              childs_;
 
 };
 

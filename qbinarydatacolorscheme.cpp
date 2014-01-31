@@ -1,8 +1,10 @@
 #include <QDomDocument>
 #include <QApplication>
+#include <QDomElement>
 #include <QDebug>
 
-#include "qbinarydatasourceproxy_colorscheme.h"
+#include "qbinarydatacolorscheme.h"
+#include "qabstractbinarydatasource.h"
 
 #define TEST_SCHEME \
     "<color_scheme>" \
@@ -34,8 +36,8 @@
     "</element>" \
     "</color_scheme>"
 
-QBinaryDataSourceProxy_ColorScheme::QBinaryDataSourceProxy_ColorScheme(QBinaryDataSource *source)
-    : source_(source)
+QBinaryDataColorScheme::QBinaryDataColorScheme()
+    : source_(0)
 {
     root_.size          = 0;
     root_.name          = "no name";
@@ -49,11 +51,17 @@ QBinaryDataSourceProxy_ColorScheme::QBinaryDataSourceProxy_ColorScheme(QBinaryDa
 //    parseScheme(scheme);
 }
 
-void QBinaryDataSourceProxy_ColorScheme::parseChildElement(const QDomElement &element)
+void QBinaryDataColorScheme::setDataSource(QAbstractBinaryDataSource *source)
+{
+    source_ = source;
+    source_->setColorScheme(this);
+}
+
+void QBinaryDataColorScheme::parseChildElement(QDomElement *element)
 {
     Element child;
 
-    QDomNode n = element.firstChild();
+    QDomNode n = element->firstChild();
     while (!n.isNull())
     {
         QDomElement e = n.toElement();
@@ -101,7 +109,7 @@ void QBinaryDataSourceProxy_ColorScheme::parseChildElement(const QDomElement &el
     childs_.append(child);
 }
 
-bool QBinaryDataSourceProxy_ColorScheme::parseScheme(const QByteArray &xmlDocument)
+bool QBinaryDataColorScheme::parseScheme(const QByteArray &xmlDocument)
 {
     bool res        = false;
     int errorLine   = -1;
@@ -164,7 +172,7 @@ bool QBinaryDataSourceProxy_ColorScheme::parseScheme(const QByteArray &xmlDocume
             }
             else if(tagName == "element")
             {
-                parseChildElement(e);
+                parseChildElement(&e);
             }
         }
         n = n.nextSibling();
@@ -175,50 +183,52 @@ bool QBinaryDataSourceProxy_ColorScheme::parseScheme(const QByteArray &xmlDocume
     return res;
 }
 
-QBinaryDataSourceProxy_ColorScheme::Element
-QBinaryDataSourceProxy_ColorScheme::findElementByIndex(const QModelIndex &index) const
+QBinaryDataColorScheme::Element
+QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
 {
     Element result = root_;
-    quint64 elem_start = 0;
-    quint64 offset = source_->indexToOffset(index);
+    if (source_ && index.isValid())
+    {
+        quint64 elem_start = 0;
+        quint64 offset = source_->indexToOffset(index);
 
-    if (root_.size)
-    {
-        offset = offset % root_.size;
-    }
-    foreach(Element elem, childs_)
-    {
-        quint64 elem_end = elem_start + elem.size;
-        if (offset >= elem_start && offset < elem_end)
+        if (root_.size)
         {
-            result = elem;
-            break;
+            offset = offset % root_.size;
         }
-        elem_start = elem_end;
+        foreach(Element elem, childs_)
+        {
+            quint64 elem_end = elem_start + elem.size;
+            if (offset >= elem_start && offset < elem_end)
+            {
+                result = elem;
+                break;
+            }
+            elem_start = elem_end;
+        }
     }
-
     return result;
 }
 
-QString QBinaryDataSourceProxy_ColorScheme::name(const QModelIndex &index) const
+QString QBinaryDataColorScheme::name(const QModelIndex &index) const
 {
     Element element = findElementByIndex(index);
     return element.name;
 }
 
-QString QBinaryDataSourceProxy_ColorScheme::descrition(const QModelIndex &index) const
+QString QBinaryDataColorScheme::descrition(const QModelIndex &index) const
 {
     Element element = findElementByIndex(index);
     return element.description;
 }
 
-QColor QBinaryDataSourceProxy_ColorScheme::color(const QModelIndex &index) const
+QColor QBinaryDataColorScheme::color(const QModelIndex &index) const
 {
     Element element = findElementByIndex(index);
     return element.color;
 }
 
-QColor QBinaryDataSourceProxy_ColorScheme::changedColor(const QModelIndex &index) const
+QColor QBinaryDataColorScheme::changedColor(const QModelIndex &index) const
 {
     Element element = findElementByIndex(index);
     return element.changedcolor;

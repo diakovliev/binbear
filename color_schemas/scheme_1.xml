@@ -1,0 +1,14 @@
+<color_scheme>
+<size>512</size>
+<name>Disk sectors boundaries</name>
+<description>descrition</description>
+<color>white</color>
+<changedcolor>gray</changedcolor>
+<element>
+   <size>1</size>
+   <name>First byte</name>
+   <description>desc 1</description>
+   <color>cyan</color>
+   <changedcolor>green</changedcolor>
+</element>
+</color_scheme>

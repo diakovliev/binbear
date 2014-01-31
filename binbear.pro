@@ -17,7 +17,8 @@ SOURCES += main.cpp \
     qbinarydataformatter_raw.cpp \
     qbinarydataformatter_hex.cpp \
     qbinarydataformatsfactory.cpp \
-    qbinarydatasourceproxy_colorscheme.cpp
+    qbinarydatacolorscheme.cpp \
+    qbinarydatacolorschemasfactory.cpp
 HEADERS += mainwindow.h \
     qbinarydatasource.h \
     qbinarydataview.h \
@@ -31,5 +32,9 @@ HEADERS += mainwindow.h \
     qbinarydataformatter_raw.h \
     qbinarydataformatter_hex.h \
     qbinarydataformatsfactory.h \
-    qbinarydatasourceproxy_colorscheme.h
+    qbinarydatacolorscheme.h \
+    qbinarydatacolorschemasfactory.h
 FORMS += mainwindow.ui
+
+RESOURCES += \
+    resources.qrc

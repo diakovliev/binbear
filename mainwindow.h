@@ -6,6 +6,7 @@
 #include <QLabel>
 
 #include "qbinarydatasource.h"
+#include "qbinarydatacolorschemasfactory.h"
 
 namespace Ui {
     class MainWindow;
@@ -30,6 +31,8 @@ protected:
     void initCopyAsActions();
     void controlCopyAsActions(bool enable);
 
+    void initColorSchemeActions();
+
 public slots:
     void on_action_gotoAddress_triggered();
     void on_action_commitChanges_triggered();
@@ -42,6 +45,7 @@ public slots:
     void on_viewport_Cursor_selectionCanceled();
 
     void on_Copy_As_ActionTriggered();
+    void on_Color_Scheme_ActionTriggered();
 
 signals:
 
@@ -50,6 +54,7 @@ private:
 
     QFile *currentFile_;
     QBinaryDataSource *currentDS_;
+    QList<QBinaryDataColorScheme*> colorSchemas_;
 
     // status bar
     QLabel *statusLabel_;

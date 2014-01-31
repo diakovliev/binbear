@@ -4,14 +4,13 @@
 #include <QDebug>
 
 #include "qbinarydatasourceproxy.h"
-#include "qbinarydatasourceproxy_colorscheme.h"
+#include "qbinarydatacolorscheme.h"
 #include "qbinarydatasource.h"
 
 QBinaryDataSourceProxy::QBinaryDataSourceProxy(QBinaryDataSource *source)
     : QAbstractBinaryDataSource(source)
     , source_(source)
     , cashedData_()
-    , colorScheme_(0)
 {    
 }
 
@@ -67,40 +66,21 @@ quint8 QBinaryDataSourceProxy::viewWidth(void) const
     return source_->viewWidth();
 }
 
-void QBinaryDataSourceProxy::setColorScheme(QBinaryDataSourceProxy_ColorScheme *colorScheme)
-{
-    Q_ASSERT(source_ != 0);
-
-    if (colorScheme_ != colorScheme)
-    {
-        colorScheme_ = colorScheme;
-
-        reset();
-    }
-}
-
-QBinaryDataSourceProxy_ColorScheme *QBinaryDataSourceProxy::colorScheme() const
-{
-    Q_ASSERT(source_ != 0);
-
-    return colorScheme_;
-}
-
 QVariant QBinaryDataSourceProxy::data(const QModelIndex &index, int role) const
 {
     Q_ASSERT(source_ != 0);
 
     if (role == Qt::BackgroundRole)
     {
-        if (colorScheme_)
+        if (colorScheme())
         {
             if (cashedData_.contains(index))
             {
-                return colorScheme_->changedColor(index);
+                return colorScheme()->changedColor(index);
             }
             else
             {
-                return colorScheme_->color(index);
+                return colorScheme()->color(index);
             }
         }
         else
@@ -128,7 +108,15 @@ bool QBinaryDataSourceProxy::setData(const QModelIndex & index, const QVariant &
     }
     else
     {
-        cashedData_.insert(index, value);
+        QVariant orig = source_->data(index, Qt::EditRole);
+        if (orig != value)
+        {
+            cashedData_.insert(index, value);
+        }
+        else if (cashedData_.contains(index))
+        {
+            cashedData_.remove(index);
+        }
 
         emit dataChanged(index);
 
@@ -203,4 +191,11 @@ bool QBinaryDataSourceProxy::revertChanges()
     reset();
 
     return true;
+}
+
+void QBinaryDataSourceProxy::onParentModelReset()
+{
+    Q_ASSERT(source_ != 0);
+
+    reset();
 }

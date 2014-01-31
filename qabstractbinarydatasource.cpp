@@ -3,6 +3,7 @@
 QAbstractBinaryDataSource::QAbstractBinaryDataSource(QObject *parent)
     : QAbstractItemModel(parent)
     , viewWidth_(20)
+    , colorScheme_(0)
 {
 }
 
@@ -37,4 +38,18 @@ bool QAbstractBinaryDataSource::indexInRange(const QModelIndex &pos, const QMode
     quint64 po1   = qMin(indexToOffset(p1), indexToOffset(p2));
     quint64 po2   = qMax(indexToOffset(p1), indexToOffset(p2));
     return po >= po1 && po <= po2;
+}
+
+/******************************************************************************/
+void QAbstractBinaryDataSource::setColorScheme(QBinaryDataColorScheme *colorScheme)
+{
+    colorScheme_ = colorScheme;
+
+    reset();
+}
+
+/******************************************************************************/
+QBinaryDataColorScheme *QAbstractBinaryDataSource::colorScheme() const
+{
+    return colorScheme_;
 }

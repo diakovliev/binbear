@@ -2,7 +2,7 @@
 #define QBINARYDATASOURCEPROXY_H
 
 #include "qabstractbinarydatasource.h"
-#include "qbinarydatasourceproxy_colorscheme.h"
+#include "qbinarydatacolorscheme.h"
 
 class QBinaryDataSource;
 
@@ -41,19 +41,15 @@ public:
     bool commitChanges();
     bool revertChanges();
 
-    /* Set color scheme */
-    void setColorScheme(QBinaryDataSourceProxy_ColorScheme *colorScheme);
-    QBinaryDataSourceProxy_ColorScheme *colorScheme() const;
-
 signals:
     void dataChanged(const QModelIndex &index);
 
 public slots:
+    void onParentModelReset();
 
 private:
     QBinaryDataSource *source_;
     QMap<QModelIndex, QVariant> cashedData_;
-    QBinaryDataSourceProxy_ColorScheme *colorScheme_;
     
 };
 

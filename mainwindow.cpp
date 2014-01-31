@@ -20,10 +20,12 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , currentFile_(0)
     , currentDS_(0)
+    , colorSchemas_()
     , activeSelection_()
 {    
     ui->setupUi(this);
     setupStatusBar();
+    initColorSchemeActions();
     initCopyAsActions();
 
     //--------------------------------------------
@@ -41,6 +43,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    qDeleteAll(colorSchemas_);
     delete ui;
 }
 
@@ -101,6 +104,43 @@ void MainWindow::controlCopyAsActions(bool enable)
     foreach(QAction *action, actions)
     {
         action->setEnabled(enable);
+    }
+}
+
+void MainWindow::initColorSchemeActions()
+{
+    qDeleteAll(colorSchemas_);
+
+    QDir dir(":/color_schemas");
+    colorSchemas_ = QBinaryDataColorSchemasFactory::createColorSchemas(dir);
+    int i = 0;
+    foreach(QBinaryDataColorScheme *scheme, colorSchemas_)
+    {
+        QAction *action = ui->menuColor_scheme->addAction(scheme->name());
+        action->setEnabled(true);
+        //action->setCheckable(true);
+        //action->setChecked(false);
+        action->setProperty("scheme_id", i++);
+
+        connect(action, SIGNAL(triggered()), this, SLOT(on_Color_Scheme_ActionTriggered()));
+    }
+}
+
+void MainWindow::on_Color_Scheme_ActionTriggered()
+{
+    QAction *action = qobject_cast<QAction*>(sender());
+    if (!action) return;
+
+    QVariant scheme_id = action->property("scheme_id");
+    if (!scheme_id.isNull())
+    {
+        QBinaryDataSourceProxy *proxy = qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
+        if (proxy)
+        {
+            QBinaryDataColorScheme *scheme = colorSchemas_.at(scheme_id.toInt());
+            scheme->setDataSource(proxy);
+            qDebug() << "Color scheme:" << scheme->name() << "is set";
+        }
     }
 }
 
@@ -175,16 +215,9 @@ void MainWindow::closeCurrentFile()
     if (ui->binaryDataView->dataSource() != 0)
     {
         ui->binaryDataView->setDataSource(0);
-
         QBinaryDataSourceProxy *proxy = qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
         if (proxy)
         {
-            QBinaryDataSourceProxy_ColorScheme *colorScheme = proxy->colorScheme();
-            if (colorScheme)
-            {
-                proxy->setColorScheme(0);
-                delete colorScheme;
-            }
             delete proxy;
         }
 
@@ -258,12 +291,7 @@ void MainWindow::openFile(const QString &fileName)
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionCanceled())
                 , this, SLOT(on_viewport_Cursor_selectionCanceled()));
 
-        QBinaryDataSourceProxy *proxy = currentDS_->createProxy();
-
-        QBinaryDataSourceProxy_ColorScheme *colorScheme= new QBinaryDataSourceProxy_ColorScheme(currentDS_);
-        proxy->setColorScheme(colorScheme);
-
-        ui->binaryDataView->setDataSource(proxy);
+        ui->binaryDataView->setDataSource(currentDS_->createProxy());
 
         connect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
         connect(ui->actionCommit_changes, SIGNAL(triggered()), this, SLOT(on_action_commitChanges_triggered()));

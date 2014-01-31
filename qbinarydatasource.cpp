@@ -292,5 +292,9 @@ Qt::ItemFlags QBinaryDataSource::flags(const QModelIndex &index) const
 /******************************************************************************/
 QBinaryDataSourceProxy *QBinaryDataSource::createProxy()
 {
-    return new QBinaryDataSourceProxy(this);
+    QBinaryDataSourceProxy *proxy = new QBinaryDataSourceProxy(this);
+
+    connect(this, SIGNAL(modelReset()), proxy, SLOT(onParentModelReset()));
+
+    return proxy;
 }

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource>
+        <file>color_schemas/scheme_1.xml</file>
+        <file>color_schemas/scheme_2.xml</file>
+        <file>color_schemas/scheme_3.xml</file>
+    </qresource>
+</RCC>

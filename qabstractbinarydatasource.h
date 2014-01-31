@@ -4,6 +4,8 @@
 #include <QIODevice>
 #include <QAbstractItemView>
 
+#include "qbinarydatacolorscheme.h"
+
 class QAbstractBinaryDataSource : public QAbstractItemModel
 {
     Q_OBJECT
@@ -24,6 +26,9 @@ public:
 
     bool indexInRange(const QModelIndex &pos, const QModelIndex &p1, const QModelIndex &p2) const;
 
+    void setColorScheme(QBinaryDataColorScheme *colorScheme);
+    QBinaryDataColorScheme *colorScheme() const;
+
 signals:
     
 public slots:
@@ -31,7 +36,8 @@ public slots:
 private:
     /* View management */
     quint8 viewWidth_;
-    
+    QBinaryDataColorScheme *colorScheme_;
+
 };
 
 #endif // QABSTRACTBINARYDATASOURCE_H
