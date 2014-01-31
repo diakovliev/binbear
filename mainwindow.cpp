@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     , currentFile_(0)
     , currentDS_(0)
     , colorSchemas_()
+    , currentColorScheme_(0)
     , activeSelection_()
 {    
     ui->setupUi(this);
@@ -131,15 +132,37 @@ void MainWindow::on_Color_Scheme_ActionTriggered()
     QAction *action = qobject_cast<QAction*>(sender());
     if (!action) return;
 
+    bool actionChecked = action->isChecked();
+
+    QList<QAction *> actions = ui->menuColor_scheme->actions();
+    foreach(QAction *action, actions)
+    {
+        action->setCheckable(false);
+        action->setChecked(false);
+    }
+
     QVariant scheme_id = action->property("scheme_id");
     if (!scheme_id.isNull())
     {
-        QBinaryDataSourceProxy *proxy = qobject_cast<QBinaryDataSourceProxy*>(ui->binaryDataView->dataSource());
-        if (proxy)
+        QAbstractBinaryDataSource *dataSource = qobject_cast<QAbstractBinaryDataSource*>(ui->binaryDataView->dataSource());
+        QBinaryDataColorScheme *scheme = colorSchemas_.at(scheme_id.toInt());
+        if (currentColorScheme_ != scheme)
         {
-            QBinaryDataColorScheme *scheme = colorSchemas_.at(scheme_id.toInt());
-            scheme->setDataSource(proxy);
+            if (dataSource) scheme->setDataSource(dataSource);
+            action->setCheckable(true);
+            action->setChecked(true);
             qDebug() << "Color scheme:" << scheme->name() << "is set";
+
+            currentColorScheme_ = scheme;
+        }
+        else
+        {
+            if (dataSource) scheme->setDataSource(0);
+            action->setCheckable(false);
+            action->setChecked(false);
+            qDebug() << "Color scheme:" << scheme->name() << "is unset";
+
+            currentColorScheme_ = 0;
         }
     }
 }
@@ -291,7 +314,12 @@ void MainWindow::openFile(const QString &fileName)
         connect(ui->binaryDataView->viewport(), SIGNAL(Cursor_selectionCanceled())
                 , this, SLOT(on_viewport_Cursor_selectionCanceled()));
 
-        ui->binaryDataView->setDataSource(currentDS_->createProxy());
+        QBinaryDataSourceProxy *proxy = currentDS_->createProxy();
+        if (currentColorScheme_)
+        {
+            currentColorScheme_->setDataSource(proxy);
+        }
+        ui->binaryDataView->setDataSource(proxy);
 
         connect(ui->actionGoto_address, SIGNAL(triggered()), this, SLOT(on_action_gotoAddress_triggered()));
         connect(ui->actionCommit_changes, SIGNAL(triggered()), this, SLOT(on_action_commitChanges_triggered()));

@@ -35,7 +35,6 @@ QList<QBinaryDataColorScheme*> QBinaryDataColorSchemasFactory::createColorSchema
     QList<QBinaryDataColorScheme*> result;
 
     dir.setFilter(QDir::Files | QDir::NoSymLinks);
-    //dir.setSorting(QDir::Size | QDir::Reversed);
 
     QFileInfoList list = dir.entryInfoList();
     foreach (QFileInfo fileInfo, list)
@@ -55,11 +54,6 @@ QList<QBinaryDataColorScheme*> QBinaryDataColorSchemasFactory::createColorSchema
                 result.append(colorScheme);
             }
         }
-//        else if(fileInfo.isDir())
-//        {
-//            QDir recDir(fileInfo.absoluteFilePath());
-//            result.append(createColorSchemas(recDir));
-//        }
     }
 
     return result;

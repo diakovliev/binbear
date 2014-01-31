@@ -1,28 +1,21 @@
 <color_scheme>
-<size>188</size>
-<name>PES 2</name>
+<size>16</size>
+<name>64 bit integers</name>
 <description>descrition</description>
 <color>white</color>
 <changedcolor>gray</changedcolor>
 <element>
-   <size>2</size>
-   <name>First int</name>
+   <size>8</size>
+   <name>First integer</name>
    <description>desc 1</description>
    <color>red</color>
-   <changedcolor>magenta</changedcolor>
+   <changedcolor>gray</changedcolor>
 </element>
 <element>
-   <size>2</size>
-   <name>First int</name>
+   <size>8</size>
+   <name>Second integer</name>
    <description>desc 1</description>
-   <color>cyan</color>
-   <changedcolor>magenta</changedcolor>
-</element>
-<element>
-   <size>4</size>
-   <name>Second int</name>
-   <description>desc 1</description>
-   <color>yellow</color>
-   <changedcolor>green</changedcolor>
+   <color>green</color>
+   <changedcolor>gray</changedcolor>
 </element>
 </color_scheme>

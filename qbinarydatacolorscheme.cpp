@@ -54,7 +54,10 @@ QBinaryDataColorScheme::QBinaryDataColorScheme()
 void QBinaryDataColorScheme::setDataSource(QAbstractBinaryDataSource *source)
 {
     source_ = source;
-    source_->setColorScheme(this);
+    if (source_)
+    {
+        source_->setColorScheme(this);
+    }
 }
 
 void QBinaryDataColorScheme::parseChildElement(QDomElement *element)
