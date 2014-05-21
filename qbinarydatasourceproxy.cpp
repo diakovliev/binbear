@@ -42,12 +42,6 @@ int QBinaryDataSourceProxy::columnCount(const QModelIndex & parent) const
     return source_->columnCount(parent);
 }
 
-Qt::ItemFlags QBinaryDataSourceProxy::flags(const QModelIndex &index) const
-{
-    Q_ASSERT(source_ != 0);
-    return source_->flags(index);
-}
-
 QVariant QBinaryDataSourceProxy::headerData(int section, Qt::Orientation orientation, int role) const
 {
     Q_ASSERT(source_ != 0);
@@ -64,6 +58,18 @@ quint8 QBinaryDataSourceProxy::viewWidth(void) const
 {
     Q_ASSERT(source_ != 0);
     return source_->viewWidth();
+}
+
+Qt::ItemFlags QBinaryDataSourceProxy::flags(const QModelIndex &index) const
+{
+    Q_ASSERT(source_ != 0);
+
+    Qt::ItemFlags flags = source_->flags(index);
+    if (colorScheme() && !colorScheme()->editable(index))
+    {
+        flags &= ~Qt::ItemIsEditable;
+    }
+    return flags;
 }
 
 QVariant QBinaryDataSourceProxy::data(const QModelIndex &index, int role) const

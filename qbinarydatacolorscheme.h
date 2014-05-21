@@ -16,6 +16,7 @@ protected:
         QString description;    /* item description */
         QColor  color;          /* regular background color */
         QColor  changedcolor;   /* changed item background color */
+        bool    editable;       /* editable item or not */
     };
 
 public:
@@ -25,6 +26,7 @@ public:
     QString descrition(const QModelIndex &index = QModelIndex()) const;
     QColor color(const QModelIndex &index = QModelIndex()) const;
     QColor changedColor(const QModelIndex &index = QModelIndex()) const;
+    bool editable(const QModelIndex &index) const;
 
     bool parseScheme(const QByteArray &xmlDocument);
     void setDataSource(QAbstractBinaryDataSource *source);

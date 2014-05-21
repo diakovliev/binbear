@@ -4,12 +4,14 @@
 <description>descrition</description>
 <color>white</color>
 <changedcolor>gray</changedcolor>
+<editable>true</editable>
 <element>
    <size>8</size>
    <name>First integer</name>
    <description>desc 1</description>
    <color>red</color>
    <changedcolor>gray</changedcolor>
+   <editable>true</editable>
 </element>
 <element>
    <size>8</size>
@@ -17,5 +19,6 @@
    <description>desc 1</description>
    <color>green</color>
    <changedcolor>gray</changedcolor>
+   <editable>false</editable>
 </element>
 </color_scheme>

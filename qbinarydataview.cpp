@@ -101,6 +101,8 @@ void QBinaryDataView::keyReleaseEvent(QKeyEvent * event)
 
 void QBinaryDataView::gotoAddress(quint64 pos)
 {
+    Q_ASSERT(viewport_);
+
     if (!viewport_->dataSource())
         return;
 
@@ -109,4 +111,40 @@ void QBinaryDataView::gotoAddress(quint64 pos)
     {
         viewport_->Cursor_moveToIndex(index);
     }
+}
+
+bool QBinaryDataView::addressBarVisible() const
+{
+    Q_ASSERT(viewport_);
+    return viewport_->addressBarVisible();
+}
+
+bool QBinaryDataView::presentationBarVisible() const
+{
+    Q_ASSERT(viewport_);
+    return viewport_->presentationBarVisible();
+}
+
+bool QBinaryDataView::isEditorMode() const
+{
+    Q_ASSERT(viewport_);
+    return viewport_->isEditorMode();
+}
+
+void QBinaryDataView::setAddressBarVisible(bool value)
+{
+    Q_ASSERT(viewport_);
+    viewport_->setAddressBarVisible(value);
+}
+
+void QBinaryDataView::setPresentationBarVisible(bool value)
+{
+    Q_ASSERT(viewport_);
+    viewport_->setPresentationBarVisible(value);
+}
+
+void QBinaryDataView::setEditorMode(bool value)
+{
+    Q_ASSERT(viewport_);
+    viewport_->setEditorMode(value);
 }

@@ -15,7 +15,7 @@
 //#define TRACE
 
 #ifdef TRACE
-#define TRACE_IN qDebug( "++%s", __FUNCTION__)
+#define TRACE_IN  qDebug( "++%s", __FUNCTION__)
 #define TRACE_OUT qDebug("--%s", __FUNCTION__)
 #else
 #define TRACE_IN
@@ -58,10 +58,11 @@ QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
     , cy_(32)
     , xmargin_(8)
     , ymargin_(8)
-    , addressBarVisible_(true)
-    , presentationBarVisible_(true)
+    , addressBarVisible_(true) // property
+    , presentationBarVisible_(true) // property
     , dataCache_()
     , dataOnTheScreen_()
+    , isEditorMode_(true) // property
     , cursorPaintTimer_(NULL)
     , cursorVisibility_(true)
     , savedCursorPosition_()
@@ -450,19 +451,28 @@ void QBinaryDataViewViewport::Cursor_paint(QPainter &painter)
     painter.drawRect(adjusted);
 #endif/**/
 
+    QPalette::ColorGroup colorGroup = QPalette::Active;
+    if (dataSource_ && (dataSource_->flags(currentCursorPosition_) & Qt::ItemIsEditable))
+    {
+    }
+    else
+    {
+        colorGroup = QPalette::Disabled;
+    }
+
     if (!bg.isNull())
     {
         painter.fillRect(adjusted, bg.value<QColor>());
     }
     else
     {
-        painter.fillRect(adjusted, style()->standardPalette().color(QPalette::Base));
+        painter.fillRect(adjusted, style()->standardPalette().color(colorGroup, QPalette::Base));
     }
 
     painter.setCompositionMode(QPainter::CompositionMode_HardLight);
 
-    painter.setPen(style()->standardPalette().color(QPalette::HighlightedText));
-    painter.fillRect(itemRect, style()->standardPalette().brush(QPalette::Highlight));
+    painter.setPen(style()->standardPalette().color(colorGroup, QPalette::HighlightedText));
+    painter.fillRect(itemRect, style()->standardPalette().brush(colorGroup, QPalette::Highlight));
 
     painter.drawText(itemRect,
                      alignment,
@@ -927,7 +937,9 @@ void QBinaryDataViewViewport::focusInEvent(QFocusEvent * event)
 
     Q_UNUSED(event);
 
-    Cursor_startBlinking();
+    if (isEditorMode_) {
+        Cursor_startBlinking();
+    }
 
     event->accept();
 
@@ -940,7 +952,9 @@ void QBinaryDataViewViewport::focusOutEvent(QFocusEvent * event)
 
     Q_UNUSED(event);
 
-    Cursor_stopBlinking();
+    if (isEditorMode_) {
+        Cursor_stopBlinking();
+    }
 
     event->accept();
 
@@ -1053,7 +1067,7 @@ bool QBinaryDataViewViewport::isSupportedKeyPressEvent(QKeyEvent * event) const
 
     bool res = false;
 
-    if (!event->text().isEmpty() && QString("0123456789abcdefABCDEF").indexOf(event->text()) >= 0)
+    if (isEditorMode_ && !event->text().isEmpty() && QString("0123456789abcdefABCDEF").indexOf(event->text()) >= 0)
     {
         res = true;
     }
@@ -1332,7 +1346,10 @@ void QBinaryDataViewViewport::Cursor_keyPressEvent(QKeyEvent *event)
 
     if (!event->text().isEmpty() && QString("0123456789abcdefABCDEF").indexOf(event->text()) >= 0)
     {
-        newIndex = Cursor_addToInputBuffer(event->text().toUpper().at(0).toAscii());
+        if (dataSource_ && (dataSource_->flags(currentCursorPosition_) & Qt::ItemIsEditable))
+        {
+            newIndex = Cursor_addToInputBuffer(event->text().toUpper().at(0).toAscii());
+        }
     }
     else
     {
@@ -1396,4 +1413,40 @@ void QBinaryDataViewViewport::Cursor_setPosition(const QModelIndex &position)
 QBinaryDataViewViewport::DataSelection QBinaryDataViewViewport::selection() const
 {
     return currentSelection_;
+}
+
+bool QBinaryDataViewViewport::addressBarVisible() const
+{
+    return addressBarVisible_;
+}
+
+bool QBinaryDataViewViewport::presentationBarVisible() const
+{
+    return presentationBarVisible_;
+}
+
+bool QBinaryDataViewViewport::isEditorMode() const
+{
+    return isEditorMode_;
+}
+
+void QBinaryDataViewViewport::setAddressBarVisible(bool value)
+{
+    addressBarVisible_ = value;
+
+    update();
+}
+
+void QBinaryDataViewViewport::setPresentationBarVisible(bool value)
+{
+    presentationBarVisible_ = value;
+
+    update();
+}
+
+void QBinaryDataViewViewport::setEditorMode(bool value)
+{
+    isEditorMode_ = value;
+
+    update();
 }

@@ -29,6 +29,10 @@ typedef QMap<int, QVariant> ViewportItemData;
 class QBinaryDataViewViewport : public QWidget
 {
     Q_OBJECT
+    Q_PROPERTY(bool addressBarVisible READ addressBarVisible WRITE setAddressBarVisible USER true)
+    Q_PROPERTY(bool presentationBarVisible READ presentationBarVisible WRITE setPresentationBarVisible USER true)
+    Q_PROPERTY(bool isEditorMode READ isEditorMode WRITE setEditorMode USER true)
+
 public:
 
     /* Some constants */
@@ -49,6 +53,11 @@ public:
 
     explicit QBinaryDataViewViewport(QWidget *parent = 0);
     virtual ~QBinaryDataViewViewport(void);
+
+    // properties
+    bool addressBarVisible() const;
+    bool presentationBarVisible() const;
+    bool isEditorMode() const;
 
     void setDataSource(QAbstractBinaryDataSource *newDataSource);
     QAbstractBinaryDataSource *dataSource() const;
@@ -92,6 +101,11 @@ public slots:
     void Cursor_blinkingTrigger();
     void Cursor_setPosition(const QModelIndex &position);
     void Cursor_moveToIndex(const QModelIndex& index);
+
+    // properties
+    void setAddressBarVisible(bool value);
+    void setPresentationBarVisible(bool value);
+    void setEditorMode(bool value);
 
 protected:
     QList<ViewportItemData> getDataToRender(int rowsPerScreen);
@@ -172,12 +186,14 @@ private:
     int                     xmargin_;
     int                     ymargin_;
 
-    bool                    addressBarVisible_;
-    bool                    presentationBarVisible_;
+    bool                    addressBarVisible_; // property
+    bool                    presentationBarVisible_; // property
 
     CashedData              dataCache_;
 
     QList<ViewportItemData> dataOnTheScreen_;
+
+    bool                    isEditorMode_;  // property
     QPointer<QTimer>        cursorPaintTimer_;
     bool                    cursorVisibility_;
 

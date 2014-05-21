@@ -2,6 +2,8 @@
 #include <QApplication>
 #include <QDomElement>
 #include <QDebug>
+#include <QVariant>
+
 
 #include "qbinarydatacolorscheme.h"
 #include "qabstractbinarydatasource.h"
@@ -13,26 +15,30 @@
     "<description>descrition</description>" \
     "<color>white</color>" \
     "<changedcolor>gray</changedcolor>" \
+    "<editable>false</editable>" \
     "<element>" \
     "   <size>2</size>" \
     "   <name>First int</name>" \
     "   <description>desc 1</description>" \
     "   <color>red</color>" \
     "   <changedcolor>magenta</changedcolor>" \
+    "   <editable>true</editable>" \
     "</element>" \
     "<element>" \
     "   <size>2</size>" \
-    "   <name>First int</name>" \
-    "   <description>desc 1</description>" \
+    "   <name>Second int</name>" \
+    "   <description>desc 2</description>" \
     "   <color>cyan</color>" \
     "   <changedcolor>magenta</changedcolor>" \
+    "   <editable>false</editable>" \
     "</element>" \
     "<element>" \
     "   <size>4</size>" \
-    "   <name>Second int</name>" \
-    "   <description>desc 1</description>" \
+    "   <name>Third int</name>" \
+    "   <description>desc 3</description>" \
     "   <color>yellow</color>" \
     "   <changedcolor>green</changedcolor>" \
+    "   <editable>true</editable>" \
     "</element>" \
     "</color_scheme>"
 
@@ -44,11 +50,12 @@ QBinaryDataColorScheme::QBinaryDataColorScheme()
     root_.description   = "no descrition";
     root_.color         = Qt::white;
     root_.changedcolor  = Qt::gray;
+    root_.editable      = true;
 
     /* TODO: fill test scheme */
-//    QByteArray scheme;
-//    scheme += TEST_SCHEME;
-//    parseScheme(scheme);
+    //QByteArray scheme;
+    //scheme += TEST_SCHEME;
+    //parseScheme(scheme);
 }
 
 void QBinaryDataColorScheme::setDataSource(QAbstractBinaryDataSource *source)
@@ -63,6 +70,7 @@ void QBinaryDataColorScheme::setDataSource(QAbstractBinaryDataSource *source)
 void QBinaryDataColorScheme::parseChildElement(QDomElement *element)
 {
     Element child;
+    child.editable = true;
 
     QDomNode n = element->firstChild();
     while (!n.isNull())
@@ -104,6 +112,10 @@ void QBinaryDataColorScheme::parseChildElement(QDomElement *element)
                 {
                     child.changedcolor.setNamedColor(e.text());
                 }
+            }
+            else if(tagName == "editable")
+            {
+                child.editable = QVariant::fromValue(e.text()).toBool();
             }
         }
         n = n.nextSibling();
@@ -173,6 +185,10 @@ bool QBinaryDataColorScheme::parseScheme(const QByteArray &xmlDocument)
                     root_.changedcolor.setNamedColor(e.text());
                 }
             }
+            else if(tagName == "editable")
+            {
+                root_.editable = QVariant::fromValue(e.text()).toBool();
+            }
             else if(tagName == "element")
             {
                 parseChildElement(&e);
@@ -235,4 +251,10 @@ QColor QBinaryDataColorScheme::changedColor(const QModelIndex &index) const
 {
     Element element = findElementByIndex(index);
     return element.changedcolor;
+}
+
+bool QBinaryDataColorScheme::editable(const QModelIndex &index) const
+{
+    Element element = findElementByIndex(index);
+    return element.editable;
 }

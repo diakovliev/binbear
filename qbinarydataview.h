@@ -7,12 +7,21 @@
 class QBinaryDataView : public QAbstractScrollArea
 {
     Q_OBJECT
+    Q_PROPERTY(bool addressBarVisible READ addressBarVisible WRITE setAddressBarVisible USER true)
+    Q_PROPERTY(bool presentationBarVisible READ presentationBarVisible WRITE setPresentationBarVisible USER true)
+    Q_PROPERTY(bool isEditorMode READ isEditorMode WRITE setEditorMode USER true)
+
 public:
     explicit QBinaryDataView(QWidget *parent = 0);
     virtual ~QBinaryDataView(void);
 
     void setDataSource(QAbstractBinaryDataSource *newDataSource);
     QAbstractBinaryDataSource *dataSource() const;
+
+    // properties
+    bool addressBarVisible() const;
+    bool presentationBarVisible() const;
+    bool isEditorMode() const;
 
     void resizeEvent(QResizeEvent * event);
     void paintEvent(QPaintEvent * event);
@@ -28,6 +37,11 @@ signals:
 
 public slots:
     void gotoAddress(quint64 pos);
+
+    // properties
+    void setAddressBarVisible(bool value);
+    void setPresentationBarVisible(bool value);
+    void setEditorMode(bool value);
 
 private:
     QBinaryDataViewViewport *viewport_;

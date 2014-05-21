@@ -4,11 +4,13 @@
 <description>descrition</description>
 <color>white</color>
 <changedcolor>gray</changedcolor>
+<editable>true</editable>
 <element>
    <size>1</size>
    <name>First byte</name>
    <description>desc 1</description>
    <color>cyan</color>
    <changedcolor>green</changedcolor>
+   <editable>false</editable>
 </element>
 </color_scheme>
