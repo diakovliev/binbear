@@ -16,7 +16,7 @@
     "<description>descrition</description>" \
     "<color>white</color>" \
     "<changedcolor>gray</changedcolor>" \
-    "<editable>false</editable>" \    
+    "<editable>false</editable>" \
     "<element>" \
     "   <size>2</size>" \
     "   <name>First int</name>" \
@@ -204,10 +204,18 @@ bool QBinaryDataColorScheme::parseScheme(const QByteArray &xmlDocument)
     return res;
 }
 
-quint64 QBinaryDataColorScheme::readFromDS(const QModelIndex &index, quint64 size) const
+quint64 QBinaryDataColorScheme::readFromDS(quint64 offset, quint64 size) const
 {
     quint64 res = 0;
-    QByteArray data = source_->read(index, size);
+
+    QModelIndex dataPointer = source_->offsetToIndex(offset);
+    if (!dataPointer.isValid())
+    {
+        qWarning("QBinaryDataColorScheme::readFromDS: Unable to read data from 0x%08x(%ld)", offset, size);
+        return res;
+    }
+
+    QByteArray data = source_->read(dataPointer, size);
 
     for (int i = 0; i < data.size(); ++i)
         res |= (data.at(i) & 0xFF) << i;
@@ -217,13 +225,20 @@ quint64 QBinaryDataColorScheme::readFromDS(const QModelIndex &index, quint64 siz
 
 QBinaryDataColorScheme::Element
 QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
-{
+{   
     Element result = root_;
 
     if (source_ && index.isValid())
     {
-        qint64 offset = source_->indexToOffset(index);
-        qint64 packet_offset = 0;
+        qint64 raw_offset = source_->indexToOffset(index);
+        if (raw_offset < 0)
+        {
+            qWarning("QBinaryDataColorScheme::findElementByIndex: Unable to convert index to offset");
+            return result;
+        }
+
+        quint64 offset = qAbs(raw_offset);
+        quint64 packet_offset = 0;
 
         // simple case: packets with similar size
         if (root_.size > 0)
@@ -236,16 +251,11 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
         {
             quint64 packet_start = 0;
             quint64 prev_packet_start = 0;
+            quint64 packet_size = 0;
             while (packet_start <= offset)
             {
                 prev_packet_start = packet_start;
-                QModelIndex dataPointer = source_->offsetToIndex(packet_start);
-                if (!dataPointer.isValid())
-                {
-                    qCritical("QBinaryDataColorScheme::findElementByIndex: Can't read dynamic size");
-                    break;
-                }
-                quint64 packet_size = readFromDS(dataPointer, qAbs(root_.size));
+                packet_size = readFromDS(packet_start, qAbs(root_.size));
                 packet_start += packet_size + qAbs(root_.size);
             }
             offset = offset - prev_packet_start;
@@ -253,11 +263,12 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
         }
 
         // here offset should point to the first byte of needed packet
-        qint64 elem_start = 0;
+        quint64 elem_start = 0;
 
         foreach(Element elem, childs_)
         {
-            quint64 elem_end;
+            quint64 elem_end = 0;
+            quint64 elem_size = 0;
             if (elem.size > 0)
             {
                 elem_end = elem_start + elem.size;
@@ -267,15 +278,9 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
                 if ( (offset >= elem_start) && (offset < (elem_start + qAbs(elem.size))) )
                 {
                     // size field, return root
-                    return root_;
+                    return result;
                 }
-                QModelIndex dataPointer = source_->offsetToIndex(packet_offset + elem_start);
-                if (!dataPointer.isValid())
-                {
-                    qCritical("QBinaryDataColorScheme::findElementByIndex: Can't read dynamic size");
-                    break;
-                }
-                quint64 elem_size = readFromDS(dataPointer, qAbs(elem.size));
+                elem_size = readFromDS(packet_offset + elem_start, qAbs(elem.size));
                 elem_end = elem_start + elem_size + qAbs(elem.size);
             }
             else

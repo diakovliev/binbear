@@ -34,7 +34,7 @@ public:
 protected:
     Element findElementByIndex(const QModelIndex &index) const;
     void parseChildElement(QDomElement *element);
-    quint64 readFromDS(const QModelIndex &index, quint64 size) const;
+    quint64 readFromDS(quint64 offset, quint64 size) const;
 
 private:
     QAbstractBinaryDataSource   *source_;
