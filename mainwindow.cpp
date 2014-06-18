@@ -338,13 +338,12 @@ void MainWindow::on_action_Open_triggered()
 {
     QSettings settings(COMPANY_NAME, APP_NAME);
 
-    closeCurrentFile();
-
     QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"),
                                                     settings.value("MainWindow/lastFile", "/home").toString(),
                                                     tr("Any file (*.*)"));
     if (!fileName.isEmpty())
     {
+        closeCurrentFile();
         openFile(fileName);
     }
 }

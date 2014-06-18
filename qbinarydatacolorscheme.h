@@ -9,7 +9,7 @@ class QAbstractBinaryDataSource;
 
 class QBinaryDataColorScheme
 {
-protected:
+public:
     struct Element {
         qint64  size;           /* item size in bytes (can be 0 for the root element) */
         QString name;           /* item name */
@@ -19,7 +19,6 @@ protected:
         bool    editable;       /* editable item or not */
     };
 
-public:
     QBinaryDataColorScheme();
 
     QString name(const QModelIndex &index = QModelIndex()) const;
@@ -28,12 +27,10 @@ public:
     QColor changedColor(const QModelIndex &index = QModelIndex()) const;
     bool editable(const QModelIndex &index) const;
 
-    bool parseScheme(const QByteArray &xmlDocument);
     void setDataSource(QAbstractBinaryDataSource *source);
 
 protected:
     Element findElementByIndex(const QModelIndex &index) const;
-    void parseChildElement(QDomElement *element);
     quint64 readFromDS(quint64 offset, quint64 size) const;
 
 private:
@@ -42,6 +39,7 @@ private:
     Element                     root_;
     QList<Element>              childs_;
 
+    friend class QBinaryDataColorXmlSchemeParser;
 };
 
 #endif // QBINARYDATASOURCEPROXY_COLORSCHEME_H

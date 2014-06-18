@@ -1,6 +1,7 @@
 #include <QDebug>
 
 #include "qbinarydatacolorschemasfactory.h"
+#include "qbinarydatacolorxmlschemeparser.h"
 
 QBinaryDataColorSchemasFactory::QBinaryDataColorSchemasFactory()
 {
@@ -8,26 +9,14 @@ QBinaryDataColorSchemasFactory::QBinaryDataColorSchemasFactory()
 
 QBinaryDataColorScheme *QBinaryDataColorSchemasFactory::createColorScheme(QFile &file)
 {
-    QBinaryDataColorScheme *colorScheme = new QBinaryDataColorScheme();
-    QByteArray xmlInput = file.readAll();
-    if (!colorScheme->parseScheme(xmlInput))
-    {
-        qDebug() << "Unable to read color scheme from file:" << file.fileName();
-        delete colorScheme;
-        colorScheme = 0;
-    }
-    return colorScheme;
+    QBinaryDataColorXmlSchemeParser parser;
+    return parser.parseColorScheme(file.readAll());
 }
 
 QBinaryDataColorScheme *QBinaryDataColorSchemasFactory::createColorScheme(const QByteArray &xmlInput)
 {
-    QBinaryDataColorScheme *colorScheme = new QBinaryDataColorScheme();
-    if (!colorScheme->parseScheme(xmlInput))
-    {
-        delete colorScheme;
-        colorScheme = 0;
-    }
-    return colorScheme;
+    QBinaryDataColorXmlSchemeParser parser;
+    return parser.parseColorScheme(xmlInput);
 }
 
 QList<QBinaryDataColorScheme*> QBinaryDataColorSchemasFactory::createColorSchemas(QDir &dir)

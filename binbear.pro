@@ -19,7 +19,9 @@ SOURCES += main.cpp \
     qbinarydataformatsfactory.cpp \
     qbinarydatacolorscheme.cpp \
     qbinarydatacolorschemasfactory.cpp \
-    qbinarydataview_propertieseditor.cpp
+    qbinarydataview_propertieseditor.cpp \
+    qbinarydatacolorabstractschemeparser.cpp \
+    qbinarydatacolorxmlschemeparser.cpp
 HEADERS += mainwindow.h \
     qbinarydatasource.h \
     qbinarydataview.h \
@@ -35,7 +37,9 @@ HEADERS += mainwindow.h \
     qbinarydataformatsfactory.h \
     qbinarydatacolorscheme.h \
     qbinarydatacolorschemasfactory.h \
-    qbinarydataview_propertieseditor.h
+    qbinarydataview_propertieseditor.h \
+    qbinarydatacolorabstractschemeparser.h \
+    qbinarydatacolorxmlschemeparser.h
 FORMS += mainwindow.ui \
     qbinarydataview_propertieseditor.ui
 
