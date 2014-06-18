@@ -46,7 +46,7 @@ QBinaryDataViewViewport::QBinaryDataViewViewport(QWidget *parent)
     : QWidget(parent)
     , dataSource_(0)
     , scrollArea_(0)
-    , groupSize_(4)
+    , groupSize_(4) // property
     , linesPerPage_(1)
     , columnsOnView_(1)
     , setupScrollBarsNeeded_(false)
@@ -128,17 +128,18 @@ QAbstractBinaryDataSource *QBinaryDataViewViewport::dataSource() const
     return dataSource_;
 }
 
-void QBinaryDataViewViewport::setGroupSize(quint8 newGroupSize)
+void QBinaryDataViewViewport::setGroupSize(unsigned int newGroupSize)
 {
     TRACE_IN;
-    if (newGroupSize != groupSize_) {        
+    if (newGroupSize != groupSize_)
+    {
         groupSize_ = newGroupSize;
         update();
     }
     TRACE_OUT;
 }
 
-int QBinaryDataViewViewport::groupSize() const
+unsigned int QBinaryDataViewViewport::groupSize() const
 {
     TRACE_IN;
     TRACE_OUT;
@@ -1002,11 +1003,13 @@ void QBinaryDataViewViewport::mousePressEvent(QMouseEvent * event)
         event->accept();
     }
     break;
-//    case Qt::RightButton:
-//    {
-//        emit queryForContextMenu(event->pos());
-//    }
-//    break;
+    case Qt::RightButton:
+    {
+        emit queryForContextMenu(event->pos());
+
+        event->accept();
+    }
+    break;
     default:;
     }
 

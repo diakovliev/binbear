@@ -1,0 +1,36 @@
+<color_scheme>
+<size>-1</size>
+<name>Test dynamic scheme</name>
+<description>descrition</description>
+<color>green</color>
+<changedcolor>gray</changedcolor>
+<editable>false</editable>
+<element>
+   <size>1</size>
+   <name>Packet size</name>
+   <description>desc 1</description>
+   <color>gray</color>
+   <editable>false</editable>
+</element>
+<element>
+   <size>-1</size>
+   <name>Dynamic fieldr</name>
+   <description>desc 1</description>
+   <color>white</color>
+   <editable>true</editable>
+</element>
+<element>
+   <size>8</size>
+   <name>First integer</name>
+   <description>desc 1</description>
+   <color>red</color>
+   <editable>true</editable>
+</element>
+<element>
+   <size>8</size>
+   <name>Second integer</name>
+   <description>desc 1</description>
+   <color>cyan</color>
+   <editable>false</editable>
+</element>
+</color_scheme>

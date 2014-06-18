@@ -27,12 +27,14 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
     bool setData(const QModelIndex & index, const QVariant & value, int role = Qt::EditRole);
 
+    QByteArray read(const QModelIndex &from, quint64 size) const;
+
     /* Data navigation */
     QModelIndex nextIndex(const QModelIndex &index) const;
     QModelIndex prevIndex(const QModelIndex &index) const;
 
     QModelIndex offsetToIndex(quint64 offset) const;
-    quint64 indexToOffset(QModelIndex index) const;
+    qint64 indexToOffset(const QModelIndex &index) const;
 
     /* Edit proxy */
     QBinaryDataSourceProxy *createProxy();

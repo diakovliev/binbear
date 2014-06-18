@@ -149,7 +149,7 @@ QModelIndex QBinaryDataSourceProxy::offsetToIndex(quint64 offset) const
     return source_->offsetToIndex(offset);
 }
 
-quint64 QBinaryDataSourceProxy::indexToOffset(QModelIndex index) const
+qint64 QBinaryDataSourceProxy::indexToOffset(const QModelIndex &index) const
 {
     Q_ASSERT(source_ != 0);
     return source_->indexToOffset(index);
@@ -205,3 +205,46 @@ void QBinaryDataSourceProxy::onParentModelReset()
 
     reset();
 }
+
+QByteArray QBinaryDataSourceProxy::read(const QModelIndex &from, quint64 size) const
+{
+    QByteArray result;
+
+    Q_ASSERT(source_ != 0);
+
+    if (!from.isValid())
+    {
+        qWarning("QBinaryDataSourceProxy::read: not valid index");
+        return result;
+    }
+
+    QModelIndex current = from;
+    quint64 count = 0;
+    do {
+        quint8 byte = 0;
+        QString value;
+
+        if (!current.isValid())
+        {
+            break;
+        }
+
+        if (cashedData_.contains(current))
+        {
+            value = cashedData_.value(current).toString();
+        }
+        else
+        {
+            value = source_->data(current, Qt::DisplayRole).toString();
+        }
+        byte = value.toInt(0,16);
+
+        result.append(byte);
+
+        current = nextIndex(current);
+        ++count;
+    } while (count < size);
+
+    return result;
+}
+

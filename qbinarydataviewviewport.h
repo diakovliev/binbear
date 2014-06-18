@@ -32,6 +32,7 @@ class QBinaryDataViewViewport : public QWidget
     Q_PROPERTY(bool addressBarVisible READ addressBarVisible WRITE setAddressBarVisible USER true)
     Q_PROPERTY(bool presentationBarVisible READ presentationBarVisible WRITE setPresentationBarVisible USER true)
     Q_PROPERTY(bool isEditorMode READ isEditorMode WRITE setEditorMode USER true)
+    Q_PROPERTY(unsigned int groupSize READ groupSize WRITE setGroupSize USER true)
 
 public:
 
@@ -62,8 +63,8 @@ public:
     void setDataSource(QAbstractBinaryDataSource *newDataSource);
     QAbstractBinaryDataSource *dataSource() const;
 
-    void setGroupSize(quint8 newGroupSize);
-    int groupSize() const;
+    void setGroupSize(unsigned int newGroupSize);
+    unsigned int groupSize() const;
 
     int topRow() const;
     int leftColumn() const;
@@ -170,7 +171,7 @@ private:
     QAbstractBinaryDataSource           *dataSource_;
     QAbstractScrollArea                 *scrollArea_;
 
-    quint8                  groupSize_;
+    unsigned int            groupSize_;
 
     int                     linesPerPage_;
     int                     columnsOnView_;

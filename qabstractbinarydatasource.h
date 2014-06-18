@@ -22,7 +22,9 @@ public:
     virtual QModelIndex prevIndex(const QModelIndex &index) const = 0;
 
     virtual QModelIndex offsetToIndex(quint64 offset) const = 0;
-    virtual quint64 indexToOffset(QModelIndex index) const = 0;
+    virtual qint64 indexToOffset(const QModelIndex &index) const = 0;
+
+    virtual QByteArray read(const QModelIndex &from, quint64 size) const = 0;
 
     bool indexInRange(const QModelIndex &pos, const QModelIndex &p1, const QModelIndex &p2) const;
 

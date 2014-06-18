@@ -111,19 +111,16 @@ QModelIndex QBinaryDataSource::offsetToIndex(quint64 offset) const
 }
 
 /******************************************************************************/
-quint64 QBinaryDataSource::indexToOffset(QModelIndex index) const
+qint64 QBinaryDataSource::indexToOffset(const QModelIndex &index) const
 {
     if (!index.isValid())
-        return 0;
-
-    if (index.row() * viewWidth() + index.column() - 1  < 0)
-        return 0;
+        return -1;
 
     quint64 pos = index.row() * viewWidth() + index.column();
 
     quint64 size = ioDevice_->size();
     if ( size - 1 < pos )
-        return 0;
+        return -1;
 
     return pos;
 }
@@ -187,7 +184,7 @@ QVariant QBinaryDataSource::data(const QModelIndex &index, int role) const
     Q_ASSERT_X(viewWidth() > 0, __FUNCTION__, "viewWidth_ is zero");
 
     /* Qt::DisplayRole */
-    if (role == Qt::UserRole){
+    if (role == Qt::UserRole) {
 
         /* Data */
         quint64 size = ioDevice_->size();
@@ -297,4 +294,33 @@ QBinaryDataSourceProxy *QBinaryDataSource::createProxy()
     connect(this, SIGNAL(modelReset()), proxy, SLOT(onParentModelReset()));
 
     return proxy;
+}
+
+/******************************************************************************/
+QByteArray QBinaryDataSource::read(const QModelIndex &from, quint64 size) const
+{
+    QByteArray result;
+
+    if (!from.isValid())
+    {
+        qWarning("QBinaryDataSource::read: not valid index");
+        return result;
+    }
+
+    qint64 pos = indexToOffset(from);
+    if (pos < 0)
+    {
+        qWarning("QBinaryDataSource::read: trying to read from negative position");
+        return result;
+    }
+
+    Q_ASSERT_X(ioDevice_->isOpen(), __FUNCTION__, "ioDevice should be opened");
+    if (ioDevice_->seek(pos)) {
+        result = ioDevice_->read(size);
+    }
+    else {
+        qWarning("QBinaryDataSource::read: unable to seek");
+    }
+
+    return result;
 }

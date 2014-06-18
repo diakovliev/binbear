@@ -29,10 +29,12 @@ public:
     QModelIndex prevIndex(const QModelIndex &index) const;
 
     QModelIndex offsetToIndex(quint64 offset) const;
-    quint64 indexToOffset(QModelIndex index) const;
+    qint64 indexToOffset(const QModelIndex &index) const;
 
     void setViewWidth(quint8 viewWidth);
     quint8 viewWidth(void) const;
+
+    QByteArray read(const QModelIndex &from, quint64 size) const;
 
     /* Do we have any changes */
     bool doWeHaveChangesToCommit();

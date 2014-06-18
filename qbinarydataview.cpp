@@ -131,6 +131,12 @@ bool QBinaryDataView::isEditorMode() const
     return viewport_->isEditorMode();
 }
 
+unsigned int QBinaryDataView::groupSize() const
+{
+    Q_ASSERT(viewport_);
+    return viewport_->groupSize();
+}
+
 void QBinaryDataView::setAddressBarVisible(bool value)
 {
     Q_ASSERT(viewport_);
@@ -147,4 +153,30 @@ void QBinaryDataView::setEditorMode(bool value)
 {
     Q_ASSERT(viewport_);
     viewport_->setEditorMode(value);
+}
+
+void QBinaryDataView::setGroupSize(unsigned int newGroupSize)
+{
+    Q_ASSERT(viewport_);
+    viewport_->setGroupSize(newGroupSize);
+}
+
+void QBinaryDataView::setProperties(const Properties &properties)
+{
+    Q_ASSERT(viewport_);
+
+    viewport_->setProperty("addressBarVisible", properties.addressBarVisible);
+    viewport_->setProperty("presentationBarVisible", properties.presentationBarVisible);
+    viewport_->setProperty("isEditorMode", properties.isEditorMode);
+    viewport_->setProperty("groupSize", properties.groupSize);
+}
+
+void QBinaryDataView::getProperties(Properties &properties)
+{
+    Q_ASSERT(viewport_);
+
+    properties.addressBarVisible        = viewport_->property("addressBarVisible").toBool();
+    properties.presentationBarVisible   = viewport_->property("presentationBarVisible").toBool();
+    properties.isEditorMode             = viewport_->property("isEditorMode").toBool();
+    properties.groupSize                = viewport_->property("groupSize").toInt();
 }

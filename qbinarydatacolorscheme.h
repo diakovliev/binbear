@@ -11,7 +11,7 @@ class QBinaryDataColorScheme
 {
 protected:
     struct Element {
-        quint64 size;           /* item size in bytes (can be 0 for the root element) */
+        qint64  size;           /* item size in bytes (can be 0 for the root element) */
         QString name;           /* item name */
         QString description;    /* item description */
         QColor  color;          /* regular background color */
@@ -34,6 +34,7 @@ public:
 protected:
     Element findElementByIndex(const QModelIndex &index) const;
     void parseChildElement(QDomElement *element);
+    quint64 readFromDS(const QModelIndex &index, quint64 size) const;
 
 private:
     QAbstractBinaryDataSource   *source_;
