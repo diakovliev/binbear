@@ -2,33 +2,33 @@
 <size>-1</size>
 <name>Test dynamic scheme</name>
 <description>descrition</description>
-<color>green</color>
+<color>gray</color>
 <changedcolor>gray</changedcolor>
 <editable>false</editable>
 <element>
    <size>1</size>
-   <name>Packet size</name>
+   <name>Static field</name>
    <description>desc 1</description>
-   <color>gray</color>
+   <color>green</color>
    <editable>false</editable>
 </element>
 <element>
    <size>-1</size>
-   <name>Dynamic fieldr</name>
+   <name>Dynamic field 1</name>
    <description>desc 1</description>
    <color>white</color>
    <editable>true</editable>
 </element>
 <element>
-   <size>8</size>
-   <name>First integer</name>
+   <size>-1</size>
+   <name>Dynamic field 2</name>
    <description>desc 1</description>
    <color>red</color>
    <editable>true</editable>
 </element>
 <element>
-   <size>8</size>
-   <name>Second integer</name>
+   <size>4</size>
+   <name>Integer</name>
    <description>desc 1</description>
    <color>cyan</color>
    <editable>false</editable>

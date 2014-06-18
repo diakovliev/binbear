@@ -219,6 +219,7 @@ QBinaryDataColorScheme::Element
 QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
 {
     Element result = root_;
+
     if (source_ && index.isValid())
     {
         qint64 offset = source_->indexToOffset(index);
@@ -265,9 +266,8 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
             {
                 if ( (offset >= elem_start) && (offset < (elem_start + qAbs(elem.size))) )
                 {
-                    // size element
-                    result = root_;
-                    break;
+                    // size field, return root
+                    return root_;
                 }
                 QModelIndex dataPointer = source_->offsetToIndex(packet_offset + elem_start);
                 if (!dataPointer.isValid())
@@ -293,6 +293,7 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
         }
 
     }
+
     return result;
 }
 
