@@ -60,6 +60,7 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
             return result;
         }
 
+        quint64 elem_start = 0;
         quint64 offset = qAbs(raw_offset);
         quint64 packet_offset = 0;
 
@@ -75,19 +76,34 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
             quint64 packet_start = 0;
             quint64 prev_packet_start = 0;
             quint64 packet_size = 0;
+            quint64 prev_packet_size = 0;
+
+            // look for needed packet
             while (packet_start <= offset)
             {
                 prev_packet_start = packet_start;
+                prev_packet_size = packet_size;
                 packet_size = readFromDS(packet_start, qAbs(root_.size));
                 packet_start += packet_size + qAbs(root_.size);
             }
+
+            // setup saved values
             offset = offset - prev_packet_start;
             packet_offset = prev_packet_start;
+            packet_size = prev_packet_size;
+
+            // check if index is related to "size field"
+            if ( (offset >= 0) && (offset < (packet_size + qAbs(root_.size))) )
+            {
+                // size field, return root
+                return result;
+            }
+
+            // correct elem_start
+            elem_start += qAbs(root_.size);
         }
 
         // here offset should point to the first byte of needed packet
-        quint64 elem_start = 0;
-
         foreach(Element elem, childs_)
         {
             quint64 elem_end = 0;

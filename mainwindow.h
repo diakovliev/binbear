@@ -56,6 +56,7 @@ private:
     QBinaryDataSource *currentDS_;
     QList<QBinaryDataColorScheme*> colorSchemas_;
     QBinaryDataColorScheme *currentColorScheme_;
+    QBinaryDataColorScheme *lastExternalColorScheme_;
 
     // status bar
     QLabel *statusLabel_;

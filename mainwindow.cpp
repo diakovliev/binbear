@@ -22,6 +22,7 @@ MainWindow::MainWindow(QWidget *parent)
     , currentDS_(0)
     , colorSchemas_()
     , currentColorScheme_(0)
+    , lastExternalColorScheme_(0)
     , activeSelection_()
 {    
     ui->setupUi(this);
@@ -45,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     currentColorScheme_ = 0;
+    lastExternalColorScheme_ = 0;
     qDeleteAll(colorSchemas_);
     delete ui;
 }
@@ -125,6 +127,12 @@ void MainWindow::initColorSchemeActions()
 
         connect(action, SIGNAL(triggered()), this, SLOT(on_Color_Scheme_ActionTriggered()));
     }
+
+    QAction *action = ui->menuColor_scheme->addAction(tr("Open scheme..."));
+    action->setEnabled(true);
+    action->setProperty("scheme_id", -1);
+
+    connect(action, SIGNAL(triggered()), this, SLOT(on_Color_Scheme_ActionTriggered()));
 }
 
 void MainWindow::on_Color_Scheme_ActionTriggered()
@@ -145,24 +153,60 @@ void MainWindow::on_Color_Scheme_ActionTriggered()
         QAbstractBinaryDataSource *dataSource =
                 qobject_cast<QAbstractBinaryDataSource*>(ui->binaryDataView->dataSource());
 
-        QBinaryDataColorScheme *scheme = colorSchemas_.at(scheme_id.toInt());
-        if (currentColorScheme_ != scheme)
+        if (scheme_id.toInt() >= 0)
         {
-            if (dataSource) scheme->setDataSource(dataSource);
-            action->setCheckable(true);
-            action->setChecked(true);
-            qDebug() << "Color scheme:" << scheme->name() << "is set";
+            QBinaryDataColorScheme *scheme = colorSchemas_.at(scheme_id.toInt());
+            if (currentColorScheme_ != scheme)
+            {
+                if (dataSource) scheme->setDataSource(dataSource);
+                action->setCheckable(true);
+                action->setChecked(true);
+                qDebug() << "Color scheme:" << scheme->name() << "is set";
 
-            currentColorScheme_ = scheme;
+                currentColorScheme_ = scheme;
+            }
+            else
+            {
+                if (dataSource) scheme->setDataSource(0);
+                action->setCheckable(false);
+                action->setChecked(false);
+                qDebug() << "Color scheme:" << scheme->name() << "is unset";
+
+                currentColorScheme_ = 0;
+            }
         }
-        else
+        else if (scheme_id.toInt() == -1)
         {
-            if (dataSource) scheme->setDataSource(0);
-            action->setCheckable(false);
-            action->setChecked(false);
-            qDebug() << "Color scheme:" << scheme->name() << "is unset";
+            QSettings settings(COMPANY_NAME, APP_NAME);
 
-            currentColorScheme_ = 0;
+            // open scheme from external file
+            QString fileName = QFileDialog::getOpenFileName(this, tr("Scheme file"),
+                                                            settings.value("MainWindow/lastFile", "/home").toString(),
+                                                            tr("Xml file (*.xml)"));
+            if (!fileName.isEmpty())
+            {
+                QFile file(fileName);
+                if (file.open(QIODevice::ReadOnly))
+                {
+                    QBinaryDataColorScheme *scheme = QBinaryDataColorSchemasFactory::createColorScheme(file);
+                    if (scheme)
+                    {
+                        if (lastExternalColorScheme_) {
+                            lastExternalColorScheme_ = 0;
+                            delete lastExternalColorScheme_;
+                        }
+
+                        if (dataSource) scheme->setDataSource(dataSource);
+                        action->setCheckable(true);
+                        action->setChecked(true);
+                        qDebug() << "Color scheme from file:" << fileName << " (" << scheme->name() << ") is set";
+
+                        currentColorScheme_ = scheme;
+                        lastExternalColorScheme_ = scheme;
+                    }
+                }
+            }
+
         }
     }
 }
