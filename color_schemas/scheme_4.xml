@@ -1,36 +1,57 @@
 <color_scheme>
-<size>-1</size>
-<name>Test dynamic scheme</name>
-<description>descrition</description>
-<color>gray</color>
+<size>1024</size>
+<name>Loader descriptor</name>
+<description>Loader descriptor</description>
+<color>white</color>
 <changedcolor>gray</changedcolor>
 <editable>false</editable>
 <element>
-   <size>1</size>
-   <name>Static field</name>
-   <description>desc 1</description>
+   <size>2</size>
+   <name>magic</name>
+   <description>magic</description>
    <color>green</color>
    <editable>false</editable>
 </element>
 <element>
-   <size>-1</size>
-   <name>Dynamic field 1</name>
-   <description>desc 1</description>
-   <color>white</color>
-   <editable>true</editable>
-</element>
-<element>
-   <size>-1</size>
-   <name>Dynamic field 2</name>
-   <description>desc 1</description>
-   <color>red</color>
-   <editable>true</editable>
-</element>
-<element>
-   <size>4</size>
-   <name>Integer</name>
-   <description>desc 1</description>
-   <color>cyan</color>
+   <size>3</size>
+   <name>version</name>
+   <description>version</description>
+   <color>gray</color>
    <editable>false</editable>
+</element>
+<element>
+   <size>2</size>
+   <name>loader sectors count</name>
+   <description>loader sectors count</description>
+   <color>green</color>
+   <editable>false</editable>
+</element>
+<element>
+   <size>2</size>
+   <name>unused</name>
+   <description>unused</description>
+   <color>gray</color>
+   <editable>false</editable>
+</element>
+<element>
+   <size>2</size>
+   <name>loader descriptor sectors count</name>
+   <description>loader descriptor sectors count</description>
+   <color>green</color>
+   <editable>false</editable>
+</element>
+<element>
+    <size>501</size>
+    <name>hole</name>
+    <description>hole</description>
+    <color>white</color>
+    <editable>false</editable>
+</element>
+<element>
+    <size>512</size>
+    <name>environment</name>
+    <description>environment</description>
+    <color>green</color>
+    <editable>false</editable>
 </element>
 </color_scheme>

@@ -206,8 +206,10 @@ void MainWindow::on_Color_Scheme_ActionTriggered()
                     }
                 }
             }
-
         }
+
+        // temp workaround to invalidate viewport internal cache
+        ui->binaryDataView->setDataSource(dataSource);
     }
 }
 

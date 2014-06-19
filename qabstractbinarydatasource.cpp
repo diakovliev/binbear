@@ -46,6 +46,8 @@ void QAbstractBinaryDataSource::setColorScheme(QBinaryDataColorScheme *colorSche
     colorScheme_ = colorScheme;
 
     reset();
+
+    emit invalidateModelData();
 }
 
 /******************************************************************************/

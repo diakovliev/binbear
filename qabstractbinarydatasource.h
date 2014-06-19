@@ -32,6 +32,7 @@ public:
     QBinaryDataColorScheme *colorScheme() const;
 
 signals:
+    void invalidateModelData();
     
 public slots:
 

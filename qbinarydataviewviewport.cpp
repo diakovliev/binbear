@@ -97,7 +97,6 @@ void QBinaryDataViewViewport::setDataSource(QAbstractBinaryDataSource *newDataSo
         leftColumn_ = 0;
         totalRowCount_ = 0;
         totalColumnCount_ = 0;
-        dataCache_.reset();
         cursorVisibility_ = true;
         currentCursorItemData_.clear();
         currentCursorInputBuffer_.clear();
@@ -117,6 +116,9 @@ void QBinaryDataViewViewport::setDataSource(QAbstractBinaryDataSource *newDataSo
 
         emit Cursor_positionChanged(QModelIndex(), currentCursorPosition_);
     }
+
+    // reset cashe in any case
+    dataCache_.reset();
 
     TRACE_OUT;
 }
@@ -309,10 +311,16 @@ bool QBinaryDataViewViewport::CashedData::isCasheActual(
         int topRow,
         int totalRowCount
         ) {
+
+    qDebug() << "empty: " << data_.isEmpty()
+             << " linesPerPage_: " << linesPerPage_ << " linesPerPage: " << linesPerPage
+             << " topRow_: " << topRow_ << " topRow: " << topRow
+             << " totalRowCount_: " << totalRowCount_ << " totalRowCount: " << totalRowCount;
+
     return  !data_.isEmpty() &&
             linesPerPage_ >= linesPerPage &&
-            topRow_ != topRow &&
-            totalRowCount_ != totalRowCount;
+            topRow_ == topRow &&
+            totalRowCount_ == totalRowCount;
 }
 
 void QBinaryDataViewViewport::CashedData::reset() {
@@ -399,11 +407,14 @@ QList<ViewportItemData> QBinaryDataViewViewport::getDataToRender(int rowsPerScre
 
         dataCache_ = CashedData(rowsPerScreen,topRow_,totalRowCount_,dataToRender);
 
+        qDebug() << "data from model";
+
     } else {
 
         /* get data from the cashe */
         dataToRender = dataCache_.data();
 
+        qDebug() << "data from cache";
     }
 
     return dataToRender;

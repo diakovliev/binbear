@@ -53,6 +53,8 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
 
     if (source_ && index.isValid())
     {
+        qDebug() << "findElementByIndex(row: " << index.row() << ", column: " << index.column() << ")";
+
         qint64 raw_offset = source_->indexToOffset(index);
         if (raw_offset < 0)
         {
@@ -136,6 +138,7 @@ QBinaryDataColorScheme::findElementByIndex(const QModelIndex &index) const
             elem_start = elem_end;
         }
 
+        //qDebug() << "--findElementByIndex";
     }
 
     return result;
